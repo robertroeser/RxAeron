@@ -1,0 +1,54 @@
+buildscript {
+    repositories { jcenter() }
+    dependencies { classpath 'com.netflix.nebula:gradle-rxjava-project-plugin:2.+' }
+}
+
+description = 'RxAeron – RxJava Bindings for Aeron'
+
+apply plugin: 'rxjava-project'
+apply plugin: 'java'
+
+repositories {
+    jcenter()
+    mavenLocal()
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+dependencies {
+    compile 'io.reactivex:rxjava:1.0.10'
+
+    // Real Logic stuff needs to be built and published locally right now
+    compile 'uk.co.real-logic:sbe:1.1-RC2-SNAPSHOT'
+    compile 'uk.co.real-logic:Agrona:0.3.2-SNAPSHOT'
+    
+    compile 'uk.co.real-logic:aeron-client:0.1-SNAPSHOT'
+    compile 'uk.co.real-logic:aeron-driver:0.1-SNAPSHOT'
+    compile 'uk.co.real-logic:aeron-tools:0.1-SNAPSHOT'
+
+    //    testCompile 'junit:junit-dep:4.10'
+    //    testCompile 'org.mockito:mockito-core:1.8.5'
+}
+
+// support for snapshot/final releases with numbered branches
+nebulaRelease {
+    addReleaseBranchPattern(/\d+\.\d+\.\d+/)
+    addReleaseBranchPattern('HEAD')
+}
+
+if (project.hasProperty('release.useLastTag')) {
+    tasks.prepare.enabled = false
+}
+
+// ./gradlew generateTypes
+task generateTypes(type:JavaExec) {
+    description = "Generate SBE codecs into ${project.projectDir}/src/main/java/io/reactivex/aeron/protocol"
+    main = 'uk.co.real_logic.sbe.SbeTool'
+    classpath = sourceSets.main.compileClasspath
+    systemProperties(
+            'sbe.output.dir': "${project.projectDir}/src/main/java",
+            'sbe.target.language': 'Java',
+            'sbe.validation.stop.on.error': 'true')
+    args "${project.projectDir}/src/main/resources/schema.xml"
+}
