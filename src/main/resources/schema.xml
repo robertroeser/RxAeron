@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbe:messageSchema xmlns:sbe="http://www.fixprotocol.org/ns/simple/1.0"
+                   package="io.reactivex.aeron.protocol"
+                   id="1"
+                   version="0"
+                   semanticVersion="1.0"
+                   description="Directory Message Format"
+                   byteOrder="littleEndian">
+    <types>
+        <composite name="messageHeader" description="Message identifiers and length of message root">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <composite name="uuid">
+            <type name="mostSignificationBits" primitiveType="uint64"/>
+            <type name="leastSignificationBits" primitiveType="uint64"/>
+        </composite>
+        <composite name="varDataEncoding">
+            <type name="length" primitiveType="uint8" semanticType="Length"/>
+            <type name="varData" primitiveType="uint8" length="0" characterEncoding="UTF-8" semanticType="data"/>
+        </composite>
+
+        <composite name="binDataEncoding">
+            <type name="length" primitiveType="uint8" semanticType="Length"/>
+            <type name="varData" primitiveType="uint8" length="0" semanticType="data"/>
+        </composite>
+
+        <enum name="BooleanType" encodingType="uint8">
+            <validValue name="FALSE">0</validValue>
+            <validValue name="TRUE">1</validValue>
+        </enum>
+        <enum name="ResponseCode" encodingType="uint8">
+            <validValue name="SUCCESS">0</validValue>
+            <validValue name="ERROR">1</validValue>
+        </enum>
+    </types>
+    <sbe:message name="Response" id="1" description="Response message payload">
+        <field name="transactionId" id="4" type="uuid" />
+        <field name="code" id="1" type="ResponseCode"/>
+        <data name="key" id="2" type="varDataEncoding" />
+        <data name="value" id="3" type="varDataEncoding" />
+    </sbe:message>
+
+    <sbe:message name="Put" id="2" description="Put message payload">
+        <field name="transactionId" id="4" type="uuid" />
+        <data name="key" id="1" type="varDataEncoding" />
+        <data name="value" id="2" type="varDataEncoding" />
+        <data name="responseChannel" id="3" type="varDataEncoding" />
+    </sbe:message>
+
+    <sbe:message name="Get" id="3" description="Get message payload">
+        <field name="transactionId" id="3" type="uuid" />
+        <data name="key" id="1" type="varDataEncoding" />
+        <data name="responseChannel" id="2" type="varDataEncoding" />
+    </sbe:message>
+
+    <sbe:message name="Delete" id="4" description="Delete message payload">
+        <field name="transactionId" id="3" type="uuid" />
+        <data name="key" id="1" type="varDataEncoding" />
+        <data name="responseChannel" id="2" type="varDataEncoding" />
+    </sbe:message>
+
+    <sbe:message name="Connection" id="5" description="connections">
+        <data name="clientChannel" id="1" type="varDataEncoding" />
+    </sbe:message>
+
+    <sbe:message name="ConnectionAck" id="6" description="connection" >
+        <field name="connectionId" id="1" type="uint64"/>
+    </sbe:message>
+
+    <sbe:message name="Payload" id="7" description="payload">
+        <field name="connectionId" id="1" type="uint64"/>
+        <field name="transactionId" id="2" type="uint64" />
+        <data name="binDataEncoding" id="3" type="varDataEncoding" />
+    </sbe:message>
+
+    <sbe:message name="PayloadResponce" id="8" description="payload">
+        <field name="transactionId" id="1" type="uint64" />
+        <data name="binDataEncoding" id="2" type="varDataEncoding" />
+    </sbe:message>
+</sbe:messageSchema>
