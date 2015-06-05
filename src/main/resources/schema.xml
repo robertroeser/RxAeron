@@ -80,4 +80,9 @@
         <field name="transactionId" id="1" type="uint64" />
         <data name="binDataEncoding" id="2" type="varDataEncoding" />
     </sbe:message>
+
+    <sbe:message name="UnicastRequest" id="9" description="unicast request">
+        <data name="payload" id="1" type="varDataEncoding" description="payload being sent" />
+    </sbe:message>
+
 </sbe:messageSchema>
