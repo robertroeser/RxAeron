@@ -27,7 +27,7 @@ dependencies {
     compile 'uk.co.real-logic:aeron-driver:0.1-SNAPSHOT'
     compile 'uk.co.real-logic:aeron-tools:0.1-SNAPSHOT'
 
-    //    testCompile 'junit:junit-dep:4.10'
+    testCompile 'junit:junit-dep:4.10'
     //    testCompile 'org.mockito:mockito-core:1.8.5'
 }
 

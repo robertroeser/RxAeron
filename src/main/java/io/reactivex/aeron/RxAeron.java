@@ -48,6 +48,14 @@ public class RxAeron implements Closeable {
 
     }
 
+    public static RxAeron getInstance() {
+        if (instance == null) {
+            init();
+        }
+
+        return instance;
+    }
+
     private synchronized static void init() {
         if (instance == null) {
             instance = new RxAeron();

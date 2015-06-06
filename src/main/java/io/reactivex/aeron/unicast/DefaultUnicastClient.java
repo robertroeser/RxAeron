@@ -33,7 +33,7 @@ public class DefaultUnicastClient implements UnicastClient {
     @Override
     public Observable<Void> offer(Observable<DirectBuffer> buffer) {
 
-        buffer
+        return buffer
             .map(b -> {
                 UnsafeBuffer requestBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(1024));
                 MessageHeaderEncoder messageHeaderEncoder = new MessageHeaderEncoder();
@@ -53,9 +53,7 @@ public class DefaultUnicastClient implements UnicastClient {
 
                 return requestBuffer;
             })
-            .lift(operatorPublish);
-
-        return null;
+            .lift(operatorPublish).map(f -> null);
     }
 
     public int getStreamId() {
