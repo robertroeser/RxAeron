@@ -7,6 +7,8 @@ import rx.Observable;
 import uk.co.real_logic.agrona.DirectBuffer;
 import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
 
+import java.util.concurrent.CountDownLatch;
+
 public class RxAeronTest extends TestCase {
     public static final String CHANNEL = "aeron:udp?remote=localhost:43450";
 
@@ -14,15 +16,21 @@ public class RxAeronTest extends TestCase {
     public void testUnicastServerAndClient() throws Exception {
         RxAeron instance = RxAeron.getInstance();
 
+
+        CountDownLatch countDownLatch = new CountDownLatch(10);
+
         UnicastClient unicastClient = instance.createUnicastClient(CHANNEL);
         instance.createUnicastServer(CHANNEL, (buffer) ->
            buffer.map(b -> {
                String s = new String(b.byteArray());
                System.out.println("handling => " + s);
 
+               countDownLatch.countDown();
+
                return null;
            })
         );
+
 
         Observable<DirectBuffer> buffer = Observable
             .range(1, 10)
@@ -33,6 +41,7 @@ public class RxAeronTest extends TestCase {
                 .offer(buffer)
                 .toBlocking().last();
 
+        countDownLatch.await();
     }
 
 }

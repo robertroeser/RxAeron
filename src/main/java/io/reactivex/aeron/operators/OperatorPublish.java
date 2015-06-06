@@ -51,7 +51,7 @@ public class OperatorPublish implements Observable.Operator<Long, DirectBuffer> 
             public void tryOffer(DirectBuffer buffer) {
                 long offer = publication.offer(buffer);
 
-                if (offer == 0) {
+                if (offer >= 0) {
                     child.onNext(offer);
                     request(1);
                 } else if (offer == Publication.NOT_CONNECTED) {
