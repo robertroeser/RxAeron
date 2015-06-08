@@ -3,8 +3,8 @@ package io.reactivex.aeron;
 import io.reactivex.aeron.protocol.ConnectionAckEncoder;
 import io.reactivex.aeron.protocol.ConnectionDecoder;
 import io.reactivex.aeron.protocol.MessageHeaderDecoder;
-import io.reactivex.aeron.protocol.MessageHeaderEncoder;
 import io.reactivex.aeron.protocol.PayloadDecoder;
+import io.reactivex.aeron.protocol.MessageHeaderEncoder;
 import io.reactivex.aeron.protocol.PayloadResponceEncoder;
 
 import java.nio.ByteBuffer;

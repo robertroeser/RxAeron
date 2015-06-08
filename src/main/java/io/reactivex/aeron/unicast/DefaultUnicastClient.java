@@ -1,8 +1,8 @@
 package io.reactivex.aeron.unicast;
 
 import io.reactivex.aeron.operators.OperatorPublish;
-import io.reactivex.aeron.protocol.MessageHeaderEncoder;
 import io.reactivex.aeron.protocol.UnicastRequestEncoder;
+import io.reactivex.aeron.protocol.MessageHeaderEncoder;
 import rx.Observable;
 import rx.schedulers.Schedulers;
 import uk.co.real_logic.aeron.Aeron;
@@ -35,7 +35,7 @@ public class DefaultUnicastClient implements UnicastClient {
 
         return buffer
             .map(b -> {
-                UnsafeBuffer requestBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(1024));
+                UnsafeBuffer requestBuffer = new UnsafeBuffer(ByteBuffer.allocate(1024));
                 MessageHeaderEncoder messageHeaderEncoder = new MessageHeaderEncoder();
                 UnicastRequestEncoder unicastRequestEncoder = new UnicastRequestEncoder();
 
@@ -50,7 +50,6 @@ public class DefaultUnicastClient implements UnicastClient {
                 unicastRequestEncoder.wrap(requestBuffer, messageHeaderEncoder.size());
 
                 unicastRequestEncoder.putPayload(b, 0, b.byteArray().length);
-
                 return requestBuffer;
             })
             .lift(operatorPublish).map(f -> null);

@@ -7,9 +7,12 @@ import rx.Scheduler;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 import uk.co.real_logic.aeron.Aeron;
+import uk.co.real_logic.aeron.FragmentAssemblyAdapter;
 import uk.co.real_logic.aeron.Subscription;
 import uk.co.real_logic.aeron.tools.RateReporter;
 import uk.co.real_logic.agrona.DirectBuffer;
+import uk.co.real_logic.agrona.concurrent.BackoffIdleStrategy;
+import uk.co.real_logic.agrona.concurrent.IdleStrategy;
 import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
 
 import java.io.IOException;
@@ -22,12 +25,25 @@ import java.util.concurrent.TimeUnit;
 public class DefaultUnicastServer implements UnicastServer {
     private final Subscription subscription;
 
-    private final ThreadLocal<MessageHeaderDecoder> messageHeaderDecoderLocal = ThreadLocal.withInitial(MessageHeaderDecoder::new);
-    private final ThreadLocal<UnicastRequestDecoder> unicastRequestDecoderLocal = ThreadLocal.withInitial(UnicastRequestDecoder::new);
+    private final MessageHeaderDecoder messageHeaderDecoder = new MessageHeaderDecoder();
+    private final UnicastRequestDecoder unicastRequestDecoder = new UnicastRequestDecoder();
+
+
+    //private final ThreadLocal<MessageHeaderDecoder> messageHeaderDecoderLocal = ThreadLocal.withInitial(MessageHeaderDecoder::new);
+    //private final ThreadLocal<UnicastRequestDecoder> unicastRequestDecoderLocal = ThreadLocal.withInitial(UnicastRequestDecoder::new);
 
     private final String channel;
     private final int streamId;
     private final Scheduler.Worker worker;
+
+
+    private static final long IDLE_MAX_SPINS = 100;
+    private static final long IDLE_MAX_YIELDS = 10;
+    private static final long IDLE_MIN_PARK_NS = TimeUnit.NANOSECONDS.toNanos(1);
+    private static final long IDLE_MAX_PARK_NS = TimeUnit.MILLISECONDS.toNanos(1);
+
+    private final IdleStrategy idleStrategy =
+        new BackoffIdleStrategy(IDLE_MAX_SPINS, IDLE_MAX_YIELDS, IDLE_MIN_PARK_NS, IDLE_MAX_PARK_NS);
 
     class Stats implements RateReporter.Stats {
         long verifiableMessages = 0;
@@ -66,7 +82,7 @@ public class DefaultUnicastServer implements UnicastServer {
     {
         public void report(final StringBuilder reportString)
         {
-            System.out.println(reportString);
+            System.out.println(reportString.toString());
         }
     }
 
@@ -78,10 +94,10 @@ public class DefaultUnicastServer implements UnicastServer {
 
         stats = new Stats();
 
-        this.subscription = aeron.addSubscription(channel, streamId, (buffer, offset, length, header) -> {
+        this.subscription = aeron.addSubscription(channel, streamId, new FragmentAssemblyAdapter(
+            (buffer, offset, length, header) -> {
             stats.incrementBytes(length);
 
-            MessageHeaderDecoder messageHeaderDecoder = messageHeaderDecoderLocal.get();
             messageHeaderDecoder.wrap(buffer, offset, 0);
 
             int templateId = messageHeaderDecoder.templateId();
@@ -89,7 +105,6 @@ public class DefaultUnicastServer implements UnicastServer {
             if (templateId == UnicastRequestDecoder.TEMPLATE_ID) {
                 stats.incrementVerifiableMessages();
 
-                UnicastRequestDecoder unicastRequestDecoder = unicastRequestDecoderLocal.get();
                 unicastRequestDecoder.wrap(buffer, offset + messageHeaderDecoder.size(), messageHeaderDecoder.blockLength(), 0);
 
                 byte[] bytes = new byte[unicastRequestDecoder.payloadLength()];
@@ -104,11 +119,24 @@ public class DefaultUnicastServer implements UnicastServer {
                 System.err.println("Unknown template id " + templateId);
             }
 
+        }));
+
+        this.worker = Schedulers.newThread().createWorker();
+
+        //worker.schedulePeriodically(() -> subscription.poll(100), 0, 1, TimeUnit.NANOSECONDS);
+
+        worker.schedule(() -> {
+           for(;;) {
+               try {
+
+                   int fragments = subscription.poll(Integer.MAX_VALUE);
+
+                   idleStrategy.idle(fragments);
+               } catch(Throwable t) {
+                    t.printStackTrace();
+               }
+           }
         });
-
-        this.worker = Schedulers.computation().createWorker();
-
-        worker.schedulePeriodically(() -> subscription.poll(100), 0, 1, TimeUnit.NANOSECONDS);
     }
 
 

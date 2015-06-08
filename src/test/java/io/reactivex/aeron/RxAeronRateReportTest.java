@@ -1,9 +1,9 @@
 package io.reactivex.aeron;
 
-import io.reactivex.aeron.protocol.MessageHeaderEncoder;
 import io.reactivex.aeron.protocol.UnicastRequestEncoder;
-import io.reactivex.aeron.unicast.UnicastClient;
+import io.reactivex.aeron.protocol.MessageHeaderEncoder;
 import io.reactivex.aeron.unicast.UnicastServer;
+import io.reactivex.aeron.unicast.UnicastClient;
 import org.junit.Test;
 import rx.Observable;
 import uk.co.real_logic.aeron.Publication;
@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 public class RxAeronRateReportTest {
     public static final String CHANNEL = "aeron:udp?remote=localhost:43450";
 
-    //@Test
+    @Test
     public void testRateWithRXAeron() throws Exception {
         RxAeron instance = RxAeron.getInstance();
 
@@ -47,13 +47,13 @@ public class RxAeronRateReportTest {
 
         Publication publication = rxAeron.aeron.addPublication(CHANNEL, 1);
 
-
-        UnsafeBuffer requestBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(1024));
-
-        MessageHeaderEncoder messageHeaderEncoder = new MessageHeaderEncoder();
-        UnicastRequestEncoder unicastRequestEncoder = new UnicastRequestEncoder();
-
         for (int i = 1; i < 1_000_000; i++) {
+
+
+            UnsafeBuffer requestBuffer = new UnsafeBuffer(ByteBuffer.allocate(1024));
+
+            MessageHeaderEncoder messageHeaderEncoder = new MessageHeaderEncoder();
+            UnicastRequestEncoder unicastRequestEncoder = new UnicastRequestEncoder();
 
             messageHeaderEncoder.wrap(requestBuffer, 0, 0);
 

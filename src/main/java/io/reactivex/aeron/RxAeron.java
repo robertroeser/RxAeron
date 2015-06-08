@@ -1,13 +1,12 @@
 package io.reactivex.aeron;
 
+import io.reactivex.aeron.unicast.UnicastServer;
 import io.reactivex.aeron.unicast.DefaultUnicastClient;
 import io.reactivex.aeron.unicast.DefaultUnicastServer;
 import io.reactivex.aeron.unicast.UnicastClient;
-import io.reactivex.aeron.unicast.UnicastServer;
 import rx.Observable;
 import rx.functions.Func1;
 import uk.co.real_logic.aeron.Aeron;
-import uk.co.real_logic.aeron.Subscription;
 import uk.co.real_logic.aeron.driver.MediaDriver;
 import uk.co.real_logic.agrona.DirectBuffer;
 
@@ -62,11 +61,11 @@ public class RxAeron implements Closeable {
         }
     }
 
-    UnicastClient createUnicastClient(String channel) {
+    public UnicastClient createUnicastClient(String channel) {
         return new DefaultUnicastClient(aeron, channel, UNICAST_STREAM_ID);
     }
 
-    UnicastServer createUnicastServer(String channel, Func1<Observable<DirectBuffer>, Observable<Void>> handle) {
+    public UnicastServer createUnicastServer(String channel, Func1<Observable<DirectBuffer>, Observable<Void>> handle) {
         return new DefaultUnicastServer(aeron, channel, UNICAST_STREAM_ID, handle);
     }
 
