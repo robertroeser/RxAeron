@@ -21,7 +21,7 @@ public class RxAeron implements Closeable {
 
     private static RxAeron instance;
 
-    private final Aeron aeron;
+    protected final Aeron aeron;
     private final Aeron.Context context;
 
     private final MediaDriver.Context ctx;

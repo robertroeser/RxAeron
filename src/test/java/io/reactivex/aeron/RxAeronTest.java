@@ -1,6 +1,7 @@
 package io.reactivex.aeron;
 
 import io.reactivex.aeron.unicast.UnicastClient;
+import io.reactivex.aeron.unicast.UnicastServer;
 import junit.framework.TestCase;
 import org.junit.Test;
 import rx.Observable;
@@ -12,23 +13,24 @@ import java.util.concurrent.CountDownLatch;
 public class RxAeronTest extends TestCase {
     public static final String CHANNEL = "aeron:udp?remote=localhost:43450";
 
-    @Test
+    private RxAeron instance = RxAeron.getInstance();
+
+    @Test(timeout = 2000)
     public void testUnicastServerAndClientForTen() throws Exception {
-        RxAeron instance = RxAeron.getInstance();
 
 
         CountDownLatch countDownLatch = new CountDownLatch(10);
 
         UnicastClient unicastClient = instance.createUnicastClient(CHANNEL);
-        instance.createUnicastServer(CHANNEL, (buffer) ->
-           buffer.map(b -> {
-               String s = new String(b.byteArray());
-               System.out.println(Thread.currentThread() + " -- handling => " + s);
+        UnicastServer unicastServer = instance.createUnicastServer(CHANNEL, (buffer) ->
+                buffer.map(b -> {
+                    String s = new String(b.byteArray());
+                    System.out.println(Thread.currentThread() + " -- handling => " + s);
 
-               countDownLatch.countDown();
+                    countDownLatch.countDown();
 
-               return null;
-           })
+                    return null;
+                })
         );
 
 
@@ -42,17 +44,18 @@ public class RxAeronTest extends TestCase {
                 .toBlocking().last();
 
         countDownLatch.await();
+
+        unicastClient.close();
+        unicastServer.close();
     }
 
-    @Test
+    @Test(timeout = 2000)
     public void testUnicastServerAndClientForTenThousand() throws Exception {
-        RxAeron instance = RxAeron.getInstance();
-
 
         CountDownLatch countDownLatch = new CountDownLatch(10_000);
 
         UnicastClient unicastClient = instance.createUnicastClient(CHANNEL);
-        instance.createUnicastServer(CHANNEL, (buffer) ->
+        UnicastServer unicastServer = instance.createUnicastServer(CHANNEL, (buffer) ->
                 buffer.map(b -> {
 
                     countDownLatch.countDown();
@@ -72,6 +75,9 @@ public class RxAeronTest extends TestCase {
             .toBlocking().last();
 
         countDownLatch.await();
+
+        unicastClient.close();
+        unicastServer.close();
     }
 
 }
