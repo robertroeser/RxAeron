@@ -82,7 +82,9 @@ public class DefaultUnicastServer implements UnicastServer {
     {
         public void report(final StringBuilder reportString)
         {
-            System.out.println(reportString.toString());
+            try {
+                System.out.println(reportString);
+            } catch (Throwable t) {}
         }
     }
 
