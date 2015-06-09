@@ -4,14 +4,14 @@ package io.reactivex.aeron.protocol;
 import uk.co.real_logic.sbe.codec.java.*;
 import uk.co.real_logic.agrona.MutableDirectBuffer;
 
-public class GetEncoder
+public class EstablishConnectionEncoder
 {
-    public static final int BLOCK_LENGTH = 16;
-    public static final int TEMPLATE_ID = 3;
+    public static final int BLOCK_LENGTH = 0;
+    public static final int TEMPLATE_ID = 1;
     public static final int SCHEMA_ID = 1;
     public static final int SCHEMA_VERSION = 0;
 
-    private final GetEncoder parentMessage = this;
+    private final EstablishConnectionEncoder parentMessage = this;
     private MutableDirectBuffer buffer;
     protected int offset;
     protected int limit;
@@ -48,7 +48,7 @@ public class GetEncoder
         return offset;
     }
 
-    public GetEncoder wrap(final MutableDirectBuffer buffer, final int offset)
+    public EstablishConnectionEncoder wrap(final MutableDirectBuffer buffer, final int offset)
     {
         this.buffer = buffer;
         this.offset = offset;
@@ -72,81 +72,9 @@ public class GetEncoder
         this.limit = limit;
     }
 
-    private final UuidEncoder transactionId = new UuidEncoder();
-
-    public UuidEncoder transactionId()
-    {
-        transactionId.wrap(buffer, offset + 0, actingVersion);
-        return transactionId;
-    }
-
-    public static int keyId()
-    {
-        return 1;
-    }
-
-    public static String keyCharacterEncoding()
-    {
-        return "UTF-8";
-    }
-
-    public static String keyMetaAttribute(final MetaAttribute metaAttribute)
-    {
-        switch (metaAttribute)
-        {
-            case EPOCH: return "unix";
-            case TIME_UNIT: return "nanosecond";
-            case SEMANTIC_TYPE: return "";
-        }
-
-        return "";
-    }
-
-    public int putKey(final uk.co.real_logic.agrona.DirectBuffer src, final int srcOffset, final int length)
-    {
-        final int sizeOfLengthField = 1;
-        final int limit = limit();
-        limit(limit + sizeOfLengthField + length);
-        CodecUtil.uint8Put(buffer, limit, (short)length);
-        buffer.putBytes(limit + sizeOfLengthField, src, srcOffset, length);
-
-        return length;
-    }
-
-    public int putKey(final byte[] src, final int srcOffset, final int length)
-    {
-        final int sizeOfLengthField = 1;
-        final int limit = limit();
-        limit(limit + sizeOfLengthField + length);
-        CodecUtil.uint8Put(buffer, limit, (short)length);
-        buffer.putBytes(limit + sizeOfLengthField, src, srcOffset, length);
-
-        return length;
-    }
-
-    public void key(final String value)
-    {
-        final byte[] bytes;
-        try
-        {
-            bytes = value.getBytes("UTF-8");
-        }
-        catch (final java.io.UnsupportedEncodingException ex)
-        {
-            throw new RuntimeException(ex);
-        }
-
-        final int length = bytes.length;
-        final int sizeOfLengthField = 1;
-        final int limit = limit();
-        limit(limit + sizeOfLengthField + length);
-        CodecUtil.uint8Put(buffer, limit, (short)length);
-        buffer.putBytes(limit + sizeOfLengthField, bytes, 0, length);
-    }
-
     public static int responseChannelId()
     {
-        return 2;
+        return 1;
     }
 
     public static String responseChannelCharacterEncoding()

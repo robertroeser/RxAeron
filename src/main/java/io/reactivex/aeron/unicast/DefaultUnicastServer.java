@@ -1,19 +1,18 @@
 package io.reactivex.aeron.unicast;
 
 import io.reactivex.aeron.protocol.MessageHeaderDecoder;
-import io.reactivex.aeron.protocol.UnicastRequestDecoder;
 import rx.Observable;
 import rx.Scheduler;
-import rx.functions.Func1;
+import rx.functions.Func3;
 import rx.schedulers.Schedulers;
 import uk.co.real_logic.aeron.Aeron;
 import uk.co.real_logic.aeron.FragmentAssemblyAdapter;
 import uk.co.real_logic.aeron.Subscription;
 import uk.co.real_logic.aeron.tools.RateReporter;
 import uk.co.real_logic.agrona.DirectBuffer;
+import uk.co.real_logic.agrona.collections.Long2ObjectHashMap;
 import uk.co.real_logic.agrona.concurrent.BackoffIdleStrategy;
 import uk.co.real_logic.agrona.concurrent.IdleStrategy;
-import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,11 +25,6 @@ public class DefaultUnicastServer implements UnicastServer {
     private final Subscription subscription;
 
     private final MessageHeaderDecoder messageHeaderDecoder = new MessageHeaderDecoder();
-    private final UnicastRequestDecoder unicastRequestDecoder = new UnicastRequestDecoder();
-
-
-    //private final ThreadLocal<MessageHeaderDecoder> messageHeaderDecoderLocal = ThreadLocal.withInitial(MessageHeaderDecoder::new);
-    //private final ThreadLocal<UnicastRequestDecoder> unicastRequestDecoderLocal = ThreadLocal.withInitial(UnicastRequestDecoder::new);
 
     private final String channel;
     private final int streamId;
@@ -90,7 +84,10 @@ public class DefaultUnicastServer implements UnicastServer {
 
     private final Stats stats;
 
-    public DefaultUnicastServer(Aeron aeron, String channel, int streamId, Func1<Observable<DirectBuffer>, Observable<Void>> handle) {
+    public DefaultUnicastServer(Aeron aeron,
+                                String channel,
+                                int streamId,
+                                Long2ObjectHashMap<Func3<DirectBuffer, Integer, Integer, Observable<Void>>> handlers) {
         this.channel = channel;
         this.streamId = streamId;
 
@@ -104,28 +101,20 @@ public class DefaultUnicastServer implements UnicastServer {
 
             int templateId = messageHeaderDecoder.templateId();
 
-            if (templateId == UnicastRequestDecoder.TEMPLATE_ID) {
-                stats.incrementVerifiableMessages();
+                Func3<DirectBuffer, Integer, Integer, Observable<Void>> handler = handlers.get(templateId);
 
-                unicastRequestDecoder.wrap(buffer, offset + messageHeaderDecoder.size(), messageHeaderDecoder.blockLength(), 0);
-
-                byte[] bytes = new byte[unicastRequestDecoder.payloadLength()];
-                unicastRequestDecoder.getPayload(bytes, 0, unicastRequestDecoder.payloadLength());
-
-                UnsafeBuffer payloadBuffer = new UnsafeBuffer(bytes);
-                Observable<DirectBuffer> dataObservable = Observable.just(payloadBuffer);
-                Observable<Void> handleObservable = handle.call(dataObservable);
-                handleObservable.subscribe();
-            } else {
-                stats.incrementNonVerifiableMessages();
-                System.err.println("Unknown template id " + templateId);
-            }
-
+                if (handler != null) {
+                    stats.incrementVerifiableMessages();
+                    Observable<Void> call =
+                        handler.call(buffer, offset + messageHeaderDecoder.size(), messageHeaderDecoder.blockLength());
+                    call.subscribe();
+                } else {
+                    stats.incrementNonVerifiableMessages();
+                    System.err.println("Unknown template id " + templateId);
+                }
         }));
 
         this.worker = Schedulers.newThread().createWorker();
-
-        //worker.schedulePeriodically(() -> subscription.poll(100), 0, 1, TimeUnit.NANOSECONDS);
 
         worker.schedule(() -> {
            for(;;) {

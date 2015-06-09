@@ -4,14 +4,14 @@ package io.reactivex.aeron.protocol;
 import uk.co.real_logic.sbe.codec.java.*;
 import uk.co.real_logic.agrona.DirectBuffer;
 
-public class DeleteDecoder
+public class ClientRequestDecoder
 {
     public static final int BLOCK_LENGTH = 16;
-    public static final int TEMPLATE_ID = 4;
+    public static final int TEMPLATE_ID = 3;
     public static final int SCHEMA_ID = 1;
     public static final int SCHEMA_VERSION = 0;
 
-    private final DeleteDecoder parentMessage = this;
+    private final ClientRequestDecoder parentMessage = this;
     private DirectBuffer buffer;
     protected int offset;
     protected int limit;
@@ -48,7 +48,7 @@ public class DeleteDecoder
         return offset;
     }
 
-    public DeleteDecoder wrap(
+    public ClientRequestDecoder wrap(
         final DirectBuffer buffer, final int offset, final int actingBlockLength, final int actingVersion)
     {
         this.buffer = buffer;
@@ -76,9 +76,47 @@ public class DeleteDecoder
         this.limit = limit;
     }
 
+    public static int connectionIdId()
+    {
+        return 1;
+    }
+
+    public static String connectionIdMetaAttribute(final MetaAttribute metaAttribute)
+    {
+        switch (metaAttribute)
+        {
+            case EPOCH: return "unix";
+            case TIME_UNIT: return "nanosecond";
+            case SEMANTIC_TYPE: return "";
+        }
+
+        return "";
+    }
+
+    public static long connectionIdNullValue()
+    {
+        return 0xffffffffffffffffL;
+    }
+
+    public static long connectionIdMinValue()
+    {
+        return 0x0L;
+    }
+
+    public static long connectionIdMaxValue()
+    {
+        return 0xfffffffffffffffeL;
+    }
+
+    public long connectionId()
+    {
+        return CodecUtil.uint64Get(buffer, offset + 0, java.nio.ByteOrder.LITTLE_ENDIAN);
+    }
+
+
     public static int transactionIdId()
     {
-        return 3;
+        return 2;
     }
 
     public static String transactionIdMetaAttribute(final MetaAttribute metaAttribute)
@@ -93,25 +131,38 @@ public class DeleteDecoder
         return "";
     }
 
-    private final UuidDecoder transactionId = new UuidDecoder();
-
-    public UuidDecoder transactionId()
+    public static long transactionIdNullValue()
     {
-        transactionId.wrap(buffer, offset + 0, actingVersion);
-        return transactionId;
+        return 0xffffffffffffffffL;
     }
 
-    public static int keyId()
+    public static long transactionIdMinValue()
     {
-        return 1;
+        return 0x0L;
     }
 
-    public static String keyCharacterEncoding()
+    public static long transactionIdMaxValue()
+    {
+        return 0xfffffffffffffffeL;
+    }
+
+    public long transactionId()
+    {
+        return CodecUtil.uint64Get(buffer, offset + 8, java.nio.ByteOrder.LITTLE_ENDIAN);
+    }
+
+
+    public static int payloadId()
+    {
+        return 3;
+    }
+
+    public static String payloadCharacterEncoding()
     {
         return "UTF-8";
     }
 
-    public static String keyMetaAttribute(final MetaAttribute metaAttribute)
+    public static String payloadMetaAttribute(final MetaAttribute metaAttribute)
     {
         switch (metaAttribute)
         {
@@ -123,12 +174,12 @@ public class DeleteDecoder
         return "";
     }
 
-    public static int keyHeaderSize()
+    public static int payloadHeaderSize()
     {
         return 1;
     }
 
-    public int keyLength()
+    public int payloadLength()
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -137,7 +188,7 @@ public class DeleteDecoder
         return CodecUtil.uint8Get(buffer, limit);
     }
 
-    public int getKey(final uk.co.real_logic.agrona.MutableDirectBuffer dst, final int dstOffset, final int length)
+    public int getPayload(final uk.co.real_logic.agrona.MutableDirectBuffer dst, final int dstOffset, final int length)
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -150,7 +201,7 @@ public class DeleteDecoder
         return bytesCopied;
     }
 
-    public int getKey(final byte[] dst, final int dstOffset, final int length)
+    public int getPayload(final byte[] dst, final int dstOffset, final int length)
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -163,92 +214,7 @@ public class DeleteDecoder
         return bytesCopied;
     }
 
-    public String key()
-    {
-        final int sizeOfLengthField = 1;
-        final int limit = limit();
-        buffer.checkLimit(limit + sizeOfLengthField);
-        final int dataLength = CodecUtil.uint8Get(buffer, limit);
-        limit(limit + sizeOfLengthField + dataLength);
-        final byte[] tmp = new byte[dataLength];
-        buffer.getBytes(limit + sizeOfLengthField, tmp, 0, dataLength);
-
-        final String value;
-        try
-        {
-            value = new String(tmp, "UTF-8");
-        }
-        catch (final java.io.UnsupportedEncodingException ex)
-        {
-            throw new RuntimeException(ex);
-        }
-
-        return value;
-    }
-
-    public static int responseChannelId()
-    {
-        return 2;
-    }
-
-    public static String responseChannelCharacterEncoding()
-    {
-        return "UTF-8";
-    }
-
-    public static String responseChannelMetaAttribute(final MetaAttribute metaAttribute)
-    {
-        switch (metaAttribute)
-        {
-            case EPOCH: return "unix";
-            case TIME_UNIT: return "nanosecond";
-            case SEMANTIC_TYPE: return "";
-        }
-
-        return "";
-    }
-
-    public static int responseChannelHeaderSize()
-    {
-        return 1;
-    }
-
-    public int responseChannelLength()
-    {
-        final int sizeOfLengthField = 1;
-        final int limit = limit();
-        buffer.checkLimit(limit + sizeOfLengthField);
-
-        return CodecUtil.uint8Get(buffer, limit);
-    }
-
-    public int getResponseChannel(final uk.co.real_logic.agrona.MutableDirectBuffer dst, final int dstOffset, final int length)
-    {
-        final int sizeOfLengthField = 1;
-        final int limit = limit();
-        buffer.checkLimit(limit + sizeOfLengthField);
-        final int dataLength = CodecUtil.uint8Get(buffer, limit);
-        final int bytesCopied = Math.min(length, dataLength);
-        limit(limit + sizeOfLengthField + dataLength);
-        buffer.getBytes(limit + sizeOfLengthField, dst, dstOffset, bytesCopied);
-
-        return bytesCopied;
-    }
-
-    public int getResponseChannel(final byte[] dst, final int dstOffset, final int length)
-    {
-        final int sizeOfLengthField = 1;
-        final int limit = limit();
-        buffer.checkLimit(limit + sizeOfLengthField);
-        final int dataLength = CodecUtil.uint8Get(buffer, limit);
-        final int bytesCopied = Math.min(length, dataLength);
-        limit(limit + sizeOfLengthField + dataLength);
-        buffer.getBytes(limit + sizeOfLengthField, dst, dstOffset, bytesCopied);
-
-        return bytesCopied;
-    }
-
-    public String responseChannel()
+    public String payload()
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();

@@ -1,14 +1,20 @@
 package io.reactivex.aeron;
 
+import io.reactivex.aeron.protocol.UnicastRequestDecoder;
+import io.reactivex.aeron.requestreply.RequestReplyClient;
+import io.reactivex.aeron.requestreply.RequestReplyServer;
+import io.reactivex.aeron.unicast.UnicastRequestDataHandler;
 import io.reactivex.aeron.unicast.UnicastServer;
 import io.reactivex.aeron.unicast.DefaultUnicastClient;
 import io.reactivex.aeron.unicast.DefaultUnicastServer;
 import io.reactivex.aeron.unicast.UnicastClient;
 import rx.Observable;
 import rx.functions.Func1;
+import rx.functions.Func3;
 import uk.co.real_logic.aeron.Aeron;
 import uk.co.real_logic.aeron.driver.MediaDriver;
 import uk.co.real_logic.agrona.DirectBuffer;
+import uk.co.real_logic.agrona.collections.Long2ObjectHashMap;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -66,7 +72,21 @@ public class RxAeron implements Closeable {
     }
 
     public UnicastServer createUnicastServer(String channel, Func1<Observable<DirectBuffer>, Observable<Void>> handle) {
-        return new DefaultUnicastServer(aeron, channel, UNICAST_STREAM_ID, handle);
+        UnicastRequestDataHandler unicastRequestDataHandler = new UnicastRequestDataHandler(handle);
+        Long2ObjectHashMap<Func3<DirectBuffer, Integer, Integer, Observable<Void>>> handlers
+            = new Long2ObjectHashMap<>();
+        handlers.put(UnicastRequestDecoder.TEMPLATE_ID, unicastRequestDataHandler);
+
+        return new DefaultUnicastServer(aeron, channel, UNICAST_STREAM_ID, handlers);
+    }
+
+    public RequestReplyClient createRequestReplyClient(String channel) {
+        return null;
+    }
+
+
+    public RequestReplyServer createRequestReplyServer(String channel, Func1<Observable<DirectBuffer>, Observable<DirectBuffer>> handle) {
+        return null;
     }
 
     @Override

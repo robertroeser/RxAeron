@@ -4,14 +4,14 @@ package io.reactivex.aeron.protocol;
 import uk.co.real_logic.sbe.codec.java.*;
 import uk.co.real_logic.agrona.DirectBuffer;
 
-public class ConnectionDecoder
+public class ServerResponseDecoder
 {
-    public static final int BLOCK_LENGTH = 0;
-    public static final int TEMPLATE_ID = 5;
+    public static final int BLOCK_LENGTH = 8;
+    public static final int TEMPLATE_ID = 4;
     public static final int SCHEMA_ID = 1;
     public static final int SCHEMA_VERSION = 0;
 
-    private final ConnectionDecoder parentMessage = this;
+    private final ServerResponseDecoder parentMessage = this;
     private DirectBuffer buffer;
     protected int offset;
     protected int limit;
@@ -48,7 +48,7 @@ public class ConnectionDecoder
         return offset;
     }
 
-    public ConnectionDecoder wrap(
+    public ServerResponseDecoder wrap(
         final DirectBuffer buffer, final int offset, final int actingBlockLength, final int actingVersion)
     {
         this.buffer = buffer;
@@ -76,17 +76,12 @@ public class ConnectionDecoder
         this.limit = limit;
     }
 
-    public static int clientChannelId()
+    public static int transctionIdId()
     {
         return 1;
     }
 
-    public static String clientChannelCharacterEncoding()
-    {
-        return "UTF-8";
-    }
-
-    public static String clientChannelMetaAttribute(final MetaAttribute metaAttribute)
+    public static String transctionIdMetaAttribute(final MetaAttribute metaAttribute)
     {
         switch (metaAttribute)
         {
@@ -98,12 +93,55 @@ public class ConnectionDecoder
         return "";
     }
 
-    public static int clientChannelHeaderSize()
+    public static long transctionIdNullValue()
+    {
+        return 0xffffffffffffffffL;
+    }
+
+    public static long transctionIdMinValue()
+    {
+        return 0x0L;
+    }
+
+    public static long transctionIdMaxValue()
+    {
+        return 0xfffffffffffffffeL;
+    }
+
+    public long transctionId()
+    {
+        return CodecUtil.uint64Get(buffer, offset + 0, java.nio.ByteOrder.LITTLE_ENDIAN);
+    }
+
+
+    public static int payloadId()
+    {
+        return 2;
+    }
+
+    public static String payloadCharacterEncoding()
+    {
+        return "UTF-8";
+    }
+
+    public static String payloadMetaAttribute(final MetaAttribute metaAttribute)
+    {
+        switch (metaAttribute)
+        {
+            case EPOCH: return "unix";
+            case TIME_UNIT: return "nanosecond";
+            case SEMANTIC_TYPE: return "";
+        }
+
+        return "";
+    }
+
+    public static int payloadHeaderSize()
     {
         return 1;
     }
 
-    public int clientChannelLength()
+    public int payloadLength()
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -112,7 +150,7 @@ public class ConnectionDecoder
         return CodecUtil.uint8Get(buffer, limit);
     }
 
-    public int getClientChannel(final uk.co.real_logic.agrona.MutableDirectBuffer dst, final int dstOffset, final int length)
+    public int getPayload(final uk.co.real_logic.agrona.MutableDirectBuffer dst, final int dstOffset, final int length)
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -125,7 +163,7 @@ public class ConnectionDecoder
         return bytesCopied;
     }
 
-    public int getClientChannel(final byte[] dst, final int dstOffset, final int length)
+    public int getPayload(final byte[] dst, final int dstOffset, final int length)
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -138,7 +176,7 @@ public class ConnectionDecoder
         return bytesCopied;
     }
 
-    public String clientChannel()
+    public String payload()
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();

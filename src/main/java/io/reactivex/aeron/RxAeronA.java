@@ -1,36 +1,10 @@
 package io.reactivex.aeron;
 
-import io.reactivex.aeron.protocol.ConnectionAckEncoder;
-import io.reactivex.aeron.protocol.ConnectionDecoder;
-import io.reactivex.aeron.protocol.MessageHeaderDecoder;
-import io.reactivex.aeron.protocol.PayloadDecoder;
-import io.reactivex.aeron.protocol.MessageHeaderEncoder;
-import io.reactivex.aeron.protocol.PayloadResponceEncoder;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
-
-import rx.Observable;
-import rx.Scheduler;
-import rx.Subscriber;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
-import rx.subjects.PublishSubject;
-import uk.co.real_logic.aeron.Aeron;
-import uk.co.real_logic.aeron.FragmentAssemblyAdapter;
-import uk.co.real_logic.aeron.Publication;
-import uk.co.real_logic.aeron.Subscription;
-import uk.co.real_logic.aeron.common.concurrent.logbuffer.DataHandler;
-import uk.co.real_logic.aeron.common.concurrent.logbuffer.Header;
-import uk.co.real_logic.agrona.DirectBuffer;
-import uk.co.real_logic.agrona.collections.Long2ObjectHashMap;
-import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
-
 /**
  * Created by rroeser on 6/4/15.
  */
 public class RxAeronA {
-
+/*
     private Long2ObjectHashMap<Connection> connectionsMap = new Long2ObjectHashMap<>();
 
     public static class Connection {
@@ -330,6 +304,6 @@ public class RxAeronA {
             //new Client<>(connection, encode, decode)
         );
     }
-
+*/
 
 }

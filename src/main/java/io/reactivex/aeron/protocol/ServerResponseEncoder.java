@@ -4,14 +4,14 @@ package io.reactivex.aeron.protocol;
 import uk.co.real_logic.sbe.codec.java.*;
 import uk.co.real_logic.agrona.MutableDirectBuffer;
 
-public class PayloadEncoder
+public class ServerResponseEncoder
 {
-    public static final int BLOCK_LENGTH = 16;
-    public static final int TEMPLATE_ID = 7;
+    public static final int BLOCK_LENGTH = 8;
+    public static final int TEMPLATE_ID = 4;
     public static final int SCHEMA_ID = 1;
     public static final int SCHEMA_VERSION = 0;
 
-    private final PayloadEncoder parentMessage = this;
+    private final ServerResponseEncoder parentMessage = this;
     private MutableDirectBuffer buffer;
     protected int offset;
     protected int limit;
@@ -48,7 +48,7 @@ public class PayloadEncoder
         return offset;
     }
 
-    public PayloadEncoder wrap(final MutableDirectBuffer buffer, final int offset)
+    public ServerResponseEncoder wrap(final MutableDirectBuffer buffer, final int offset)
     {
         this.buffer = buffer;
         this.offset = offset;
@@ -72,57 +72,37 @@ public class PayloadEncoder
         this.limit = limit;
     }
 
-    public static long connectionIdNullValue()
+    public static long transctionIdNullValue()
     {
         return 0xffffffffffffffffL;
     }
 
-    public static long connectionIdMinValue()
+    public static long transctionIdMinValue()
     {
         return 0x0L;
     }
 
-    public static long connectionIdMaxValue()
+    public static long transctionIdMaxValue()
     {
         return 0xfffffffffffffffeL;
     }
-    public PayloadEncoder connectionId(final long value)
+    public ServerResponseEncoder transctionId(final long value)
     {
         CodecUtil.uint64Put(buffer, offset + 0, value, java.nio.ByteOrder.LITTLE_ENDIAN);
         return this;
     }
 
-    public static long transactionIdNullValue()
+    public static int payloadId()
     {
-        return 0xffffffffffffffffL;
+        return 2;
     }
 
-    public static long transactionIdMinValue()
-    {
-        return 0x0L;
-    }
-
-    public static long transactionIdMaxValue()
-    {
-        return 0xfffffffffffffffeL;
-    }
-    public PayloadEncoder transactionId(final long value)
-    {
-        CodecUtil.uint64Put(buffer, offset + 8, value, java.nio.ByteOrder.LITTLE_ENDIAN);
-        return this;
-    }
-
-    public static int binDataEncodingId()
-    {
-        return 3;
-    }
-
-    public static String binDataEncodingCharacterEncoding()
+    public static String payloadCharacterEncoding()
     {
         return "UTF-8";
     }
 
-    public static String binDataEncodingMetaAttribute(final MetaAttribute metaAttribute)
+    public static String payloadMetaAttribute(final MetaAttribute metaAttribute)
     {
         switch (metaAttribute)
         {
@@ -134,7 +114,7 @@ public class PayloadEncoder
         return "";
     }
 
-    public int putBinDataEncoding(final uk.co.real_logic.agrona.DirectBuffer src, final int srcOffset, final int length)
+    public int putPayload(final uk.co.real_logic.agrona.DirectBuffer src, final int srcOffset, final int length)
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -145,7 +125,7 @@ public class PayloadEncoder
         return length;
     }
 
-    public int putBinDataEncoding(final byte[] src, final int srcOffset, final int length)
+    public int putPayload(final byte[] src, final int srcOffset, final int length)
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -156,7 +136,7 @@ public class PayloadEncoder
         return length;
     }
 
-    public void binDataEncoding(final String value)
+    public void payload(final String value)
     {
         final byte[] bytes;
         try

@@ -1,26 +1,7 @@
 package io.reactivex.aeron;
 
-import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
-
-import rx.Observable;
-import rx.Observable.Operator;
-import rx.Scheduler.Worker;
-import rx.Subscriber;
-import rx.functions.Func1;
-import rx.functions.Func3;
-import rx.schedulers.Schedulers;
-import rx.subscriptions.Subscriptions;
-import uk.co.real_logic.aeron.Aeron;
-import uk.co.real_logic.aeron.FragmentAssemblyAdapter;
-import uk.co.real_logic.aeron.Publication;
-import uk.co.real_logic.aeron.Subscription;
-import uk.co.real_logic.aeron.driver.MediaDriver;
-import uk.co.real_logic.agrona.DirectBuffer;
-import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
-
 public class RxAeronB {
-
+/*
     private static final String TOMBSTONE = "TOMBSTONE";
     public static final String CHANNEL = "aeron:udp?remote=localhost:43450";
 
@@ -35,7 +16,7 @@ public class RxAeronB {
         //            return "data_" + (i + 1);
         //        }).take(5).concatWith(Observable.just(TOMBSTONE));
 
-        /* cold, fast, synchronous data stream that supports backpressure */
+        /* cold, fast, synchronous data stream that supports backpressure *
         Observable<String> data = Observable.range(1, Integer.MAX_VALUE)
                 .doOnNext(i -> {
                     if (i % 100 == 0) {
@@ -68,18 +49,10 @@ public class RxAeronB {
         return aeron.addPublication(channel, streamId);
     }
     
-    /**
-     * 
-     * @param aeron
-     * @param channel
-     * @param streamId
-     * @param data
-     * @param map
-     * @return Observable<Long> that emits the new stream position after each Aeron channel emission
-     */
+
     public static <T> Observable<Long> publish(Aeron aeron, final String channel, final int streamId, Observable<T> data, Func1<T, DirectBuffer> map) {
 
-        /* backpressure aware operator for offering to Publication */
+         backpressure aware operator for offering to Publication
         return data.lift(new Operator<Long, T>() {
 
             @Override
@@ -179,4 +152,5 @@ public class RxAeronB {
         unsafeBuffer.putBytes(0, bytes);
         return unsafeBuffer;
     }
+    */
 }

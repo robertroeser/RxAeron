@@ -4,14 +4,14 @@ package io.reactivex.aeron.protocol;
 import uk.co.real_logic.sbe.codec.java.*;
 import uk.co.real_logic.agrona.DirectBuffer;
 
-public class PayloadDecoder
+public class EstablishConnectionDecoder
 {
-    public static final int BLOCK_LENGTH = 16;
-    public static final int TEMPLATE_ID = 7;
+    public static final int BLOCK_LENGTH = 0;
+    public static final int TEMPLATE_ID = 1;
     public static final int SCHEMA_ID = 1;
     public static final int SCHEMA_VERSION = 0;
 
-    private final PayloadDecoder parentMessage = this;
+    private final EstablishConnectionDecoder parentMessage = this;
     private DirectBuffer buffer;
     protected int offset;
     protected int limit;
@@ -48,7 +48,7 @@ public class PayloadDecoder
         return offset;
     }
 
-    public PayloadDecoder wrap(
+    public EstablishConnectionDecoder wrap(
         final DirectBuffer buffer, final int offset, final int actingBlockLength, final int actingVersion)
     {
         this.buffer = buffer;
@@ -76,93 +76,17 @@ public class PayloadDecoder
         this.limit = limit;
     }
 
-    public static int connectionIdId()
+    public static int responseChannelId()
     {
         return 1;
     }
 
-    public static String connectionIdMetaAttribute(final MetaAttribute metaAttribute)
-    {
-        switch (metaAttribute)
-        {
-            case EPOCH: return "unix";
-            case TIME_UNIT: return "nanosecond";
-            case SEMANTIC_TYPE: return "";
-        }
-
-        return "";
-    }
-
-    public static long connectionIdNullValue()
-    {
-        return 0xffffffffffffffffL;
-    }
-
-    public static long connectionIdMinValue()
-    {
-        return 0x0L;
-    }
-
-    public static long connectionIdMaxValue()
-    {
-        return 0xfffffffffffffffeL;
-    }
-
-    public long connectionId()
-    {
-        return CodecUtil.uint64Get(buffer, offset + 0, java.nio.ByteOrder.LITTLE_ENDIAN);
-    }
-
-
-    public static int transactionIdId()
-    {
-        return 2;
-    }
-
-    public static String transactionIdMetaAttribute(final MetaAttribute metaAttribute)
-    {
-        switch (metaAttribute)
-        {
-            case EPOCH: return "unix";
-            case TIME_UNIT: return "nanosecond";
-            case SEMANTIC_TYPE: return "";
-        }
-
-        return "";
-    }
-
-    public static long transactionIdNullValue()
-    {
-        return 0xffffffffffffffffL;
-    }
-
-    public static long transactionIdMinValue()
-    {
-        return 0x0L;
-    }
-
-    public static long transactionIdMaxValue()
-    {
-        return 0xfffffffffffffffeL;
-    }
-
-    public long transactionId()
-    {
-        return CodecUtil.uint64Get(buffer, offset + 8, java.nio.ByteOrder.LITTLE_ENDIAN);
-    }
-
-
-    public static int binDataEncodingId()
-    {
-        return 3;
-    }
-
-    public static String binDataEncodingCharacterEncoding()
+    public static String responseChannelCharacterEncoding()
     {
         return "UTF-8";
     }
 
-    public static String binDataEncodingMetaAttribute(final MetaAttribute metaAttribute)
+    public static String responseChannelMetaAttribute(final MetaAttribute metaAttribute)
     {
         switch (metaAttribute)
         {
@@ -174,12 +98,12 @@ public class PayloadDecoder
         return "";
     }
 
-    public static int binDataEncodingHeaderSize()
+    public static int responseChannelHeaderSize()
     {
         return 1;
     }
 
-    public int binDataEncodingLength()
+    public int responseChannelLength()
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -188,7 +112,7 @@ public class PayloadDecoder
         return CodecUtil.uint8Get(buffer, limit);
     }
 
-    public int getBinDataEncoding(final uk.co.real_logic.agrona.MutableDirectBuffer dst, final int dstOffset, final int length)
+    public int getResponseChannel(final uk.co.real_logic.agrona.MutableDirectBuffer dst, final int dstOffset, final int length)
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -201,7 +125,7 @@ public class PayloadDecoder
         return bytesCopied;
     }
 
-    public int getBinDataEncoding(final byte[] dst, final int dstOffset, final int length)
+    public int getResponseChannel(final byte[] dst, final int dstOffset, final int length)
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();
@@ -214,7 +138,7 @@ public class PayloadDecoder
         return bytesCopied;
     }
 
-    public String binDataEncoding()
+    public String responseChannel()
     {
         final int sizeOfLengthField = 1;
         final int limit = limit();

@@ -4,14 +4,14 @@ package io.reactivex.aeron.protocol;
 import uk.co.real_logic.sbe.codec.java.*;
 import uk.co.real_logic.agrona.DirectBuffer;
 
-public class ConnectionAckDecoder
+public class EstablishConnectionAckDecoder
 {
     public static final int BLOCK_LENGTH = 8;
-    public static final int TEMPLATE_ID = 6;
+    public static final int TEMPLATE_ID = 2;
     public static final int SCHEMA_ID = 1;
     public static final int SCHEMA_VERSION = 0;
 
-    private final ConnectionAckDecoder parentMessage = this;
+    private final EstablishConnectionAckDecoder parentMessage = this;
     private DirectBuffer buffer;
     protected int offset;
     protected int limit;
@@ -48,7 +48,7 @@ public class ConnectionAckDecoder
         return offset;
     }
 
-    public ConnectionAckDecoder wrap(
+    public EstablishConnectionAckDecoder wrap(
         final DirectBuffer buffer, final int offset, final int actingBlockLength, final int actingVersion)
     {
         this.buffer = buffer;

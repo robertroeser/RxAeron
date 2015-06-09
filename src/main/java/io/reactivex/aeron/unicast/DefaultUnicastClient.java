@@ -21,10 +21,12 @@ public class DefaultUnicastClient implements UnicastClient {
     private final String channel;
     private final int streamId;
     private final OperatorPublish operatorPublish;
+    private final UnicastResponseDataHandler unicastResponseDataHandler;
 
-    public DefaultUnicastClient(Aeron aeron, String channel, int streamId) {
+    public DefaultUnicastClient(Aeron aeron, String channel, int streamId, UnicastResponseDataHandler unicastResponseDataHandler) {
         this.channel = channel;
         this.streamId = streamId;
+        this.unicastResponseDataHandler  = unicastResponseDataHandler;
         this.publication = aeron.addPublication(channel, streamId);
 
         this.operatorPublish = new OperatorPublish(Schedulers.computation(), publication);
@@ -37,7 +39,6 @@ public class DefaultUnicastClient implements UnicastClient {
             .map(b -> {
                 UnsafeBuffer requestBuffer = new UnsafeBuffer(ByteBuffer.allocate(1024));
                 MessageHeaderEncoder messageHeaderEncoder = new MessageHeaderEncoder();
-                UnicastRequestEncoder unicastRequestEncoder = new UnicastRequestEncoder();
 
                 messageHeaderEncoder.wrap(requestBuffer, 0, 0);
 
@@ -47,10 +48,7 @@ public class DefaultUnicastClient implements UnicastClient {
                     .schemaId(UnicastRequestEncoder.SCHEMA_ID)
                     .version(UnicastRequestEncoder.SCHEMA_VERSION);
 
-                unicastRequestEncoder.wrap(requestBuffer, messageHeaderEncoder.size());
-
-                unicastRequestEncoder.putPayload(b, 0, b.byteArray().length);
-                return requestBuffer;
+                return unicastResponseDataHandler.call(requestBuffer, messageHeaderEncoder.size(), b);
             })
             .lift(operatorPublish).map(f -> null);
     }
