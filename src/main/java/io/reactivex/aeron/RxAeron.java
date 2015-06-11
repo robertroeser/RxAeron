@@ -1,16 +1,21 @@
 package io.reactivex.aeron;
 
+import io.reactivex.aeron.protocol.ClientRequestDecoder;
+import io.reactivex.aeron.protocol.EstablishConnectionAckDecoder;
 import io.reactivex.aeron.protocol.UnicastRequestDecoder;
+import io.reactivex.aeron.requestreply.DefaultRequestReplyServer;
 import io.reactivex.aeron.requestreply.RequestReplyClient;
 import io.reactivex.aeron.requestreply.RequestReplyServer;
-import io.reactivex.aeron.unicast.UnicastRequestDataHandler;
-import io.reactivex.aeron.unicast.UnicastServer;
+import io.reactivex.aeron.requestreply.handlers.server.ClientRequestSubscriptionDataHandler;
+import io.reactivex.aeron.requestreply.handlers.server.EstablishConnectionSubscriptionDataHandler;
 import io.reactivex.aeron.unicast.DefaultUnicastClient;
 import io.reactivex.aeron.unicast.DefaultUnicastServer;
 import io.reactivex.aeron.unicast.UnicastClient;
+import io.reactivex.aeron.unicast.UnicastServer;
+import io.reactivex.aeron.unicast.handlers.UnicastPublicationDataHandler;
+import io.reactivex.aeron.unicast.handlers.UnicastSubscriptionDataHandler;
 import rx.Observable;
 import rx.functions.Func1;
-import rx.functions.Func3;
 import uk.co.real_logic.aeron.Aeron;
 import uk.co.real_logic.aeron.driver.MediaDriver;
 import uk.co.real_logic.agrona.DirectBuffer;
@@ -67,26 +72,53 @@ public class RxAeron implements Closeable {
         }
     }
 
-    public UnicastClient createUnicastClient(String channel) {
-        return new DefaultUnicastClient(aeron, channel, UNICAST_STREAM_ID);
+    public UnicastClient<DirectBuffer> createUnicastClient(String channel) {
+        return createUnicastClient(channel, new UnicastPublicationDataHandler());
+    }
+
+    public <T>  UnicastClient<T> createUnicastClient(String channel, PublicationDataHandler<T> dataHandler) {
+        return new DefaultUnicastClient(aeron, channel, UNICAST_STREAM_ID, new UnicastPublicationDataHandler());
     }
 
     public UnicastServer createUnicastServer(String channel, Func1<Observable<DirectBuffer>, Observable<Void>> handle) {
-        UnicastRequestDataHandler unicastRequestDataHandler = new UnicastRequestDataHandler(handle);
-        Long2ObjectHashMap<Func3<DirectBuffer, Integer, Integer, Observable<Void>>> handlers
+        UnicastSubscriptionDataHandler unicastServerDataHandler = new UnicastSubscriptionDataHandler(handle);
+        Long2ObjectHashMap<SubscriptionDataHandler> handlers
             = new Long2ObjectHashMap<>();
-        handlers.put(UnicastRequestDecoder.TEMPLATE_ID, unicastRequestDataHandler);
+        handlers.put(UnicastRequestDecoder.TEMPLATE_ID, unicastServerDataHandler);
 
+        return createUnicastServer(channel, handlers);
+    }
+
+    public UnicastServer createUnicastServer(String channel, Long2ObjectHashMap<SubscriptionDataHandler> handlers) {
         return new DefaultUnicastServer(aeron, channel, UNICAST_STREAM_ID, handlers);
     }
 
-    public RequestReplyClient createRequestReplyClient(String channel) {
+
+
+    public RequestReplyClient createRequestReplyClient(String serverChannel, String responseChannel) {
         return null;
     }
 
 
     public RequestReplyServer createRequestReplyServer(String channel, Func1<Observable<DirectBuffer>, Observable<DirectBuffer>> handle) {
-        return null;
+
+        Long2ObjectHashMap<UnicastClient> serverResponseClients = new Long2ObjectHashMap<>();
+
+        EstablishConnectionSubscriptionDataHandler establishConnectionServerDataHandler
+            = new EstablishConnectionSubscriptionDataHandler(serverResponseClients, this);
+
+        Long2ObjectHashMap<SubscriptionDataHandler> handlers
+            = new Long2ObjectHashMap<>();
+
+        handlers.put(EstablishConnectionAckDecoder.TEMPLATE_ID, establishConnectionServerDataHandler);
+
+        ClientRequestSubscriptionDataHandler clientRequestServerDataHandler = new ClientRequestSubscriptionDataHandler(handle, serverResponseClients);
+
+        handlers.put(ClientRequestDecoder.TEMPLATE_ID, clientRequestServerDataHandler);
+
+        DefaultUnicastServer defaultUnicastServer = new DefaultUnicastServer(aeron, channel, UNICAST_STREAM_ID, handlers);
+
+        return new DefaultRequestReplyServer(defaultUnicastServer);
     }
 
     @Override

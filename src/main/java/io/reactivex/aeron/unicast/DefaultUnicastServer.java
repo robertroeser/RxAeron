@@ -1,5 +1,6 @@
 package io.reactivex.aeron.unicast;
 
+import io.reactivex.aeron.SubscriptionDataHandler;
 import io.reactivex.aeron.protocol.MessageHeaderDecoder;
 import rx.Observable;
 import rx.Scheduler;
@@ -87,7 +88,7 @@ public class DefaultUnicastServer implements UnicastServer {
     public DefaultUnicastServer(Aeron aeron,
                                 String channel,
                                 int streamId,
-                                Long2ObjectHashMap<Func3<DirectBuffer, Integer, Integer, Observable<Void>>> handlers) {
+                                Long2ObjectHashMap<SubscriptionDataHandler> handlers) {
         this.channel = channel;
         this.streamId = streamId;
 

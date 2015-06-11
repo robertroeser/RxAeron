@@ -4,6 +4,7 @@ import io.reactivex.aeron.operators.OperatorPublish;
 import io.reactivex.aeron.protocol.UnicastRequestEncoder;
 import io.reactivex.aeron.protocol.MessageHeaderEncoder;
 import rx.Observable;
+import rx.functions.Func3;
 import rx.schedulers.Schedulers;
 import uk.co.real_logic.aeron.Aeron;
 import uk.co.real_logic.aeron.Publication;
@@ -16,24 +17,24 @@ import java.nio.ByteBuffer;
 /**
  * Created by rroeser on 6/5/15.
  */
-public class DefaultUnicastClient implements UnicastClient {
+public class DefaultUnicastClient<T> implements UnicastClient<T> {
     private final Publication publication;
     private final String channel;
     private final int streamId;
     private final OperatorPublish operatorPublish;
-    private final UnicastResponseDataHandler unicastResponseDataHandler;
+    private final  Func3<DirectBuffer, Integer, T, DirectBuffer> unicastClientDataHandler;
 
-    public DefaultUnicastClient(Aeron aeron, String channel, int streamId, UnicastResponseDataHandler unicastResponseDataHandler) {
+    public DefaultUnicastClient(Aeron aeron, String channel, int streamId,  Func3<DirectBuffer, Integer, T, DirectBuffer> unicastClientDataHandler) {
         this.channel = channel;
         this.streamId = streamId;
-        this.unicastResponseDataHandler  = unicastResponseDataHandler;
+        this.unicastClientDataHandler = unicastClientDataHandler;
         this.publication = aeron.addPublication(channel, streamId);
 
         this.operatorPublish = new OperatorPublish(Schedulers.computation(), publication);
     }
 
     @Override
-    public Observable<Void> offer(Observable<DirectBuffer> buffer) {
+    public Observable<Void> offer(Observable<T> buffer) {
 
         return buffer
             .map(b -> {
@@ -48,7 +49,7 @@ public class DefaultUnicastClient implements UnicastClient {
                     .schemaId(UnicastRequestEncoder.SCHEMA_ID)
                     .version(UnicastRequestEncoder.SCHEMA_VERSION);
 
-                return unicastResponseDataHandler.call(requestBuffer, messageHeaderEncoder.size(), b);
+                return unicastClientDataHandler.call(requestBuffer, messageHeaderEncoder.size(), b);
             })
             .lift(operatorPublish).map(f -> null);
     }

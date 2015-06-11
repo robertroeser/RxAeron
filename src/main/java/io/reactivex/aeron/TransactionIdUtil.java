@@ -16,8 +16,13 @@ public class TransactionIdUtil {
         return id.incrementAndGet();
     }
 
-    public static long getConnectionId() {
-        return rnd.nextLong();
-    }
+    public static long getConnectionId(String channel) {
+        long hash = 5381;
 
+        for (int i = 0; i < channel.length(); i++) {
+            hash = ((hash << 5) + hash) + channel.charAt(i);
+        }
+
+        return hash;
+    }
 }

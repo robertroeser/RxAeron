@@ -9,8 +9,8 @@ import java.io.Closeable;
 /**
  * Created by rroeser on 6/5/15.
  */
-public interface UnicastClient extends Closeable {
-    Observable<Void> offer(Observable<DirectBuffer> buffer);
+public interface UnicastClient<T> extends Closeable {
+    Observable<Void> offer(Observable<T> buffer);
 
     default DirectBuffer fromBytes(byte[] bytes) {
         return new UnsafeBuffer(bytes);
