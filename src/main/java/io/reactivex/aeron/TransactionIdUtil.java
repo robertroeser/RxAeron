@@ -1,7 +1,5 @@
 package io.reactivex.aeron;
 
-import java.security.SecureRandom;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -10,12 +8,11 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TransactionIdUtil {
     private static AtomicLong id = new AtomicLong(0);
 
-    private static Random rnd = new SecureRandom();
-
     public static long getTransactionId() {
         return id.incrementAndGet();
     }
 
+    // djb2 hash
     public static long getConnectionId(String channel) {
         long hash = 5381;
 

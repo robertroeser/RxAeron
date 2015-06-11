@@ -9,6 +9,8 @@ import rx.Observable;
 import uk.co.real_logic.agrona.DirectBuffer;
 import uk.co.real_logic.agrona.collections.Long2ObjectHashMap;
 
+import java.io.IOException;
+
 /**
  * Created by rroeser on 6/9/15.
  */
@@ -30,17 +32,30 @@ public class EstablishConnectionSubscriptionDataHandler implements SubscriptionD
         String responseChannel = establishConnectionDecoder.responseChannel();
         long key = TransactionIdUtil.getConnectionId(responseChannel);
 
+        System.out.println("Server " + responseChannel + " and connection id " + key + " establishing connection");
+
         if (!serverResponseClients.containsKey(key)) {
-            try (UnicastClient<Long> ackClient = rxAeron.createUnicastClient(responseChannel, new EstablishConnectionAckServerDataHandler())) {
-                return ackClient
-                    .offer(Observable.just(key))
-                    .doOnNext(f ->
-                        serverResponseClients.computeIfAbsent(key, k -> rxAeron.createUnicastClient(responseChannel, new ServerResponseServerDataHandler()))
-                    )
-                    .map(f -> null);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            System.out.println("No client found for key " + key);
+
+            UnicastClient<Long> ackClient = rxAeron.createUnicastClient(responseChannel, new EstablishConnectionAckServerDataHandler());
+
+            return ackClient
+                .offer(Observable.just(key))
+                .doOnCompleted(() -> {
+                    System.out.println("Ack sent for connection key " + key );
+                    try {
+                        ackClient.close();
+                        System.out.println("Ack connection closed for " + key);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                })
+                .doOnNext(f ->
+                        serverResponseClients.computeIfAbsent(key, k ->
+                            rxAeron.createUnicastClient(responseChannel, new ServerResponseServerDataHandler()))
+                )
+                .map(f -> null);
         }
 
         return Observable.empty();

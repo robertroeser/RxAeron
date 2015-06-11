@@ -18,4 +18,24 @@ public class UnicastPublicationDataHandler implements PublicationDataHandler<Dir
 
         return requestBuffer;
     }
+
+    @Override
+    public int getBlockLength() {
+        return UnicastRequestEncoder.BLOCK_LENGTH;
+    }
+
+    @Override
+    public int getTemplateId() {
+        return UnicastRequestEncoder.TEMPLATE_ID;
+    }
+
+    @Override
+    public int getSchemaId() {
+        return UnicastRequestEncoder.SCHEMA_ID;
+    }
+
+    @Override
+    public int getSchemaVersion() {
+        return UnicastRequestEncoder.SCHEMA_VERSION;
+    }
 }

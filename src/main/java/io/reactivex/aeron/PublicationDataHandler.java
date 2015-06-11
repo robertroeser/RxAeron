@@ -10,4 +10,13 @@ import uk.co.real_logic.agrona.MutableDirectBuffer;
 public interface PublicationDataHandler<T> extends Func3<MutableDirectBuffer, Integer, T, DirectBuffer> {
     @Override
     DirectBuffer call(MutableDirectBuffer requestBuffer, Integer offset, T t);
+
+    int getBlockLength();
+
+    int getTemplateId();
+
+    int getSchemaId();
+
+    int getSchemaVersion();
+
 }

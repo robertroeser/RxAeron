@@ -1,5 +1,6 @@
 package io.reactivex.aeron.unicast;
 
+import io.reactivex.aeron.PublicationDataHandler;
 import io.reactivex.aeron.operators.OperatorPublish;
 import io.reactivex.aeron.protocol.UnicastRequestEncoder;
 import io.reactivex.aeron.protocol.MessageHeaderEncoder;
@@ -22,15 +23,15 @@ public class DefaultUnicastClient<T> implements UnicastClient<T> {
     private final String channel;
     private final int streamId;
     private final OperatorPublish operatorPublish;
-    private final  Func3<DirectBuffer, Integer, T, DirectBuffer> unicastClientDataHandler;
+    private final PublicationDataHandler<T> unicastClientDataHandler;
 
-    public DefaultUnicastClient(Aeron aeron, String channel, int streamId,  Func3<DirectBuffer, Integer, T, DirectBuffer> unicastClientDataHandler) {
+    public DefaultUnicastClient(Aeron aeron, String channel, int streamId,  PublicationDataHandler<T> unicastClientDataHandler) {
         this.channel = channel;
         this.streamId = streamId;
         this.unicastClientDataHandler = unicastClientDataHandler;
         this.publication = aeron.addPublication(channel, streamId);
-
         this.operatorPublish = new OperatorPublish(Schedulers.computation(), publication);
+
     }
 
     @Override
@@ -44,10 +45,10 @@ public class DefaultUnicastClient<T> implements UnicastClient<T> {
                 messageHeaderEncoder.wrap(requestBuffer, 0, 0);
 
                 messageHeaderEncoder
-                    .blockLength(UnicastRequestEncoder.BLOCK_LENGTH)
-                    .templateId(UnicastRequestEncoder.TEMPLATE_ID)
-                    .schemaId(UnicastRequestEncoder.SCHEMA_ID)
-                    .version(UnicastRequestEncoder.SCHEMA_VERSION);
+                    .blockLength(unicastClientDataHandler.getBlockLength())
+                    .templateId(unicastClientDataHandler.getTemplateId())
+                    .schemaId(unicastClientDataHandler.getBlockLength())
+                    .version(unicastClientDataHandler.getSchemaVersion());
 
                 return unicastClientDataHandler.call(requestBuffer, messageHeaderEncoder.size(), b);
             })
@@ -66,4 +67,5 @@ public class DefaultUnicastClient<T> implements UnicastClient<T> {
     public void close() throws IOException {
         publication.close();
     }
+
 }

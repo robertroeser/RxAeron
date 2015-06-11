@@ -19,4 +19,24 @@ public class ServerResponseServerDataHandler implements PublicationDataHandler<D
 
         return requestBuffer;
     }
+
+    @Override
+    public int getBlockLength() {
+        return ServerResponseEncoder.BLOCK_LENGTH;
+    }
+
+    @Override
+    public int getTemplateId() {
+        return ServerResponseEncoder.TEMPLATE_ID;
+    }
+
+    @Override
+    public int getSchemaId() {
+        return ServerResponseEncoder.SCHEMA_ID;
+    }
+
+    @Override
+    public int getSchemaVersion() {
+        return ServerResponseEncoder.SCHEMA_VERSION;
+    }
 }

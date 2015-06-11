@@ -2,7 +2,9 @@ package io.reactivex.aeron;
 
 import io.reactivex.aeron.protocol.ClientRequestDecoder;
 import io.reactivex.aeron.protocol.EstablishConnectionAckDecoder;
+import io.reactivex.aeron.protocol.EstablishConnectionDecoder;
 import io.reactivex.aeron.protocol.UnicastRequestDecoder;
+import io.reactivex.aeron.requestreply.DefaultRequestReplyClient;
 import io.reactivex.aeron.requestreply.DefaultRequestReplyServer;
 import io.reactivex.aeron.requestreply.RequestReplyClient;
 import io.reactivex.aeron.requestreply.RequestReplyServer;
@@ -77,7 +79,11 @@ public class RxAeron implements Closeable {
     }
 
     public <T>  UnicastClient<T> createUnicastClient(String channel, PublicationDataHandler<T> dataHandler) {
-        return new DefaultUnicastClient(aeron, channel, UNICAST_STREAM_ID, new UnicastPublicationDataHandler());
+        return new DefaultUnicastClient<>(
+            aeron,
+            channel,
+            UNICAST_STREAM_ID,
+            dataHandler);
     }
 
     public UnicastServer createUnicastServer(String channel, Func1<Observable<DirectBuffer>, Observable<Void>> handle) {
@@ -93,12 +99,9 @@ public class RxAeron implements Closeable {
         return new DefaultUnicastServer(aeron, channel, UNICAST_STREAM_ID, handlers);
     }
 
-
-
     public RequestReplyClient createRequestReplyClient(String serverChannel, String responseChannel) {
-        return null;
+        return new DefaultRequestReplyClient(this, serverChannel, responseChannel);
     }
-
 
     public RequestReplyServer createRequestReplyServer(String channel, Func1<Observable<DirectBuffer>, Observable<DirectBuffer>> handle) {
 
@@ -110,7 +113,7 @@ public class RxAeron implements Closeable {
         Long2ObjectHashMap<SubscriptionDataHandler> handlers
             = new Long2ObjectHashMap<>();
 
-        handlers.put(EstablishConnectionAckDecoder.TEMPLATE_ID, establishConnectionServerDataHandler);
+        handlers.put(EstablishConnectionDecoder.TEMPLATE_ID, establishConnectionServerDataHandler);
 
         ClientRequestSubscriptionDataHandler clientRequestServerDataHandler = new ClientRequestSubscriptionDataHandler(handle, serverResponseClients);
 

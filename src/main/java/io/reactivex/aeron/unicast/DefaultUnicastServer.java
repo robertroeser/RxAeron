@@ -102,17 +102,17 @@ public class DefaultUnicastServer implements UnicastServer {
 
             int templateId = messageHeaderDecoder.templateId();
 
-                Func3<DirectBuffer, Integer, Integer, Observable<Void>> handler = handlers.get(templateId);
+            Func3<DirectBuffer, Integer, Integer, Observable<Void>> handler = handlers.get(templateId);
 
-                if (handler != null) {
-                    stats.incrementVerifiableMessages();
-                    Observable<Void> call =
-                        handler.call(buffer, offset + messageHeaderDecoder.size(), messageHeaderDecoder.blockLength());
-                    call.subscribe();
-                } else {
-                    stats.incrementNonVerifiableMessages();
-                    System.err.println("Unknown template id " + templateId);
-                }
+            if (handler != null) {
+                stats.incrementVerifiableMessages();
+                Observable<Void> call =
+                    handler.call(buffer, offset + messageHeaderDecoder.size(), messageHeaderDecoder.blockLength());
+                call.doOnError(Throwable::printStackTrace).subscribe();
+            } else {
+                stats.incrementNonVerifiableMessages();
+                System.err.println("Unknown template id " + templateId);
+            }
         }));
 
         this.worker = Schedulers.newThread().createWorker();

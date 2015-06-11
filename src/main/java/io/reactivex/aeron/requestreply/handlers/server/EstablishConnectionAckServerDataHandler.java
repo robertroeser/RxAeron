@@ -17,4 +17,24 @@ public class EstablishConnectionAckServerDataHandler implements PublicationDataH
 
         return requestBuffer;
     }
+
+    @Override
+    public int getBlockLength() {
+        return EstablishConnectionAckEncoder.BLOCK_LENGTH;
+    }
+
+    @Override
+    public int getTemplateId() {
+        return EstablishConnectionAckEncoder.TEMPLATE_ID;
+    }
+
+    @Override
+    public int getSchemaId() {
+        return EstablishConnectionAckEncoder.SCHEMA_ID;
+    }
+
+    @Override
+    public int getSchemaVersion() {
+        return EstablishConnectionAckEncoder.SCHEMA_VERSION;
+    }
 }
