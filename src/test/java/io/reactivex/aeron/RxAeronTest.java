@@ -113,6 +113,7 @@ public class RxAeronTest extends TestCase {
 
         requestReplyClient
             .offer(buffer)
+            .toBlocking()
             .forEach(db -> {
                 String s = new String(db.byteArray(), Charset.defaultCharset());
                 System.out.println(s);

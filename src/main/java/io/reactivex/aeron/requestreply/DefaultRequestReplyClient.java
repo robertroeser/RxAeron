@@ -146,6 +146,41 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
                 Observable<Void> offer = unicastClient.offer(Observable.just(responseChannel));
                 offer.subscribe();
 
+                System.out.println("Waiting for connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+
+                try {
+                    barrier.await(15, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    System.out.println("Timed out waiting response from server");
+                    LangUtil.rethrowUnchecked(e);
+                } catch (Exception e) {
+                    LangUtil.rethrowUnchecked(e);
+                }
+
+                System.out.println("Creating subscription to handle responses for connection id " + connectionId);
+                map = new Long2ObjectHashMap<>();
+                map.put(ServerResponseDecoder.TEMPLATE_ID, (buffer, offset, length) -> {
+                        ServerResponseDecoder serverResponseDecoder = new ServerResponseDecoder();
+                        serverResponseDecoder.wrap(buffer, offset, length, 0);
+
+                        long transactionId = serverResponseDecoder.transctionId();
+                        byte[] bytes = new byte[serverResponseDecoder.payloadLength()];
+                        serverResponseDecoder.getPayload(bytes, 0, serverResponseDecoder.payloadLength());
+
+                        System.out.println("Handling response for transaction id " + transactionId);
+
+                        UnsafeBuffer payloadBuffer = new UnsafeBuffer(bytes);
+
+                        PublishSubject<DirectBuffer> responseSubject = transactionIdToResponse.get(transactionId);
+                        responseSubject.onNext(payloadBuffer);
+                        responseSubject.onCompleted();
+
+                        return Observable.empty();
+                    }
+                );
+
+                responseServer = rxAeron.createUnicastServer(responseChannel, map);
+
                 System.out.println("Establishing connection for connection id " + connectionId + ", server channel " + serverChannel + ", and response channel " + responseChannel);
                 client = rxAeron.createUnicastClient(serverChannel, new PublicationDataHandler<Request>() {
                     final long cid = connectionId;
@@ -155,7 +190,11 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
                         ClientRequestEncoder clientRequestEncoder = new ClientRequestEncoder();
                         clientRequestEncoder.wrap(requestBuffer, offset);
 
-                        clientRequestEncoder.transactionId(request.getTransactionId());
+                        long transactionId = request.getTransactionId();
+
+                        System.out.println("Sending request for transaction id " + transactionId);
+
+                        clientRequestEncoder.transactionId(transactionId);
                         clientRequestEncoder.connectionId(cid);
                         clientRequestEncoder.putPayload(request.getPayload(), 0, request.getPayload().capacity());
 
@@ -183,39 +222,7 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
                     }
                 });
 
-                System.out.println("Waiting for connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
-                try {
-                    barrier.await(15, TimeUnit.SECONDS);
-                } catch (TimeoutException e) {
-                    System.out.println("Timed out waiting response from server");
-                    LangUtil.rethrowUnchecked(e);
-                } catch (Exception e) {
-                    LangUtil.rethrowUnchecked(e);
-                }
-
-
-                map = new Long2ObjectHashMap<>();
-                map.put(ServerResponseDecoder.TEMPLATE_ID, (buffer, offset, length) -> {
-                        ServerResponseDecoder serverResponseDecoder = new ServerResponseDecoder();
-                        serverResponseDecoder.wrap(buffer, offset, length, 0);
-
-                        long transctionId = serverResponseDecoder.transctionId();
-                        byte[] bytes = new byte[serverResponseDecoder.payloadLength()];
-                        serverResponseDecoder.getPayload(bytes, 0, serverResponseDecoder.payloadLength());
-
-                        UnsafeBuffer payloadBuffer = new UnsafeBuffer(bytes);
-
-                        PublishSubject<DirectBuffer> responseSubject = transactionIdToResponse.get(transctionId);
-                        responseSubject.onNext(payloadBuffer);
-                        responseSubject.onCompleted();
-
-                        return Observable.empty();
-                    }
-                );
-
-                responseServer = rxAeron.createUnicastServer(responseChannel, map);
-
-                System.out.println("Connection id " + connectionId + " successfully established");
+                System.out.println("Connection for connection id " + connectionId + " successfully established");
                 initialized = true;
 
             }

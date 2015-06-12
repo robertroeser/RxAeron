@@ -37,6 +37,8 @@ public class ClientRequestSubscriptionDataHandler implements SubscriptionDataHan
         long transactionId = clientRequestDecoder.transactionId();
         long connectionId = clientRequestDecoder.connectionId();
 
+        System.out.println("Server handling client request for transaction id " + transactionId + ", and connection id " + connectionId);
+
         UnsafeBuffer payloadBuffer = new UnsafeBuffer(bytes);
         Observable<DirectBuffer> dataObservable = Observable.just(payloadBuffer);
         Observable<DirectBuffer> result = handle.call(dataObservable);

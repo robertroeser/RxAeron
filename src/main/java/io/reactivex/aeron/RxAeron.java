@@ -40,7 +40,6 @@ public class RxAeron implements Closeable {
     private final MediaDriver mediaDriver;
 
     private static final int UNICAST_STREAM_ID = 1;
-    private static final int MULTICAST_STREAM_ID = 2;
 
     private RxAeron() {
         ctx = new MediaDriver.Context();

@@ -16,7 +16,6 @@ import uk.co.real_logic.agrona.concurrent.BackoffIdleStrategy;
 import uk.co.real_logic.agrona.concurrent.IdleStrategy;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -30,6 +29,7 @@ public class DefaultUnicastServer implements UnicastServer {
     private final String channel;
     private final int streamId;
     private final Scheduler.Worker worker;
+    private volatile boolean running = true;
 
 
     private static final long IDLE_MAX_SPINS = 100;
@@ -118,16 +118,17 @@ public class DefaultUnicastServer implements UnicastServer {
         this.worker = Schedulers.newThread().createWorker();
 
         worker.schedule(() -> {
-           for(;;) {
+            do {
                try {
 
                    int fragments = subscription.poll(Integer.MAX_VALUE);
 
                    idleStrategy.idle(fragments);
                } catch(Throwable t) {
+                   System.err.println("Exception occurred on channel " + channel + " on stream id " + streamId);
                     t.printStackTrace();
                }
-           }
+           } while(running);
         });
     }
 
@@ -152,7 +153,8 @@ public class DefaultUnicastServer implements UnicastServer {
 
     @Override
     public void close() throws IOException {
-        Arrays.asList(worker).forEach(Scheduler.Worker::unsubscribe);
+        running = false;
+        worker.unsubscribe();
         subscription.close();
     }
 }
