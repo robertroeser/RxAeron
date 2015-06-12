@@ -10,8 +10,10 @@ import io.reactivex.aeron.protocol.EstablishConnectionEncoder;
 import io.reactivex.aeron.protocol.ServerResponseDecoder;
 import io.reactivex.aeron.unicast.UnicastClient;
 import io.reactivex.aeron.unicast.UnicastServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
-import rx.subjects.PublishSubject;
+import rx.Subscriber;
 import uk.co.real_logic.agrona.DirectBuffer;
 import uk.co.real_logic.agrona.LangUtil;
 import uk.co.real_logic.agrona.MutableDirectBuffer;
@@ -22,15 +24,17 @@ import java.io.IOException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by rroeser on 6/8/15.
  */
 public class DefaultRequestReplyClient implements RequestReplyClient {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultRequestReplyClient.class);
 
     private final RxAeron rxAeron;
 
-    private final Long2ObjectHashMap<PublishSubject<DirectBuffer>> transactionIdToResponse;
+    private final Long2ObjectHashMap<Subscriber<? super DirectBuffer>> transactionIdToResponse;
 
     private final String serverChannel;
 
@@ -57,23 +61,25 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
             establishConnection(serverChannel, responseChannel);
         }
 
-        long transactionId = TransactionIdUtil.getTransactionId();
-        PublishSubject<DirectBuffer> responseSubject = PublishSubject.<DirectBuffer>create();
-        transactionIdToResponse.put(transactionId, responseSubject);
+        final AtomicLong countSent = new AtomicLong(-1);
+        final AtomicLong countReceived = new AtomicLong(0);
 
-        Observable
-            .<Long>create(subscriber -> {
-                subscriber.onNext(transactionId);
-                subscriber.onCompleted();
-            })
-            .flatMap(t ->
-                    client
-                        .offer(buffer.map(b ->
-                            new Request(transactionId, b)))
-            )
-            .subscribe();
+        return Observable.<DirectBuffer>create(s -> {
+            long transactionId = TransactionIdUtil.getTransactionId();
+            transactionIdToResponse.put(transactionId, s);
 
-        return responseSubject;
+            client.offer(buffer.map(b ->
+                new Request(transactionId, b)))
+                .countLong()
+                .doOnNext(countSent::set)
+                .subscribe();
+        })
+        .takeUntil(b -> {
+            long sent = countSent.get();
+            long received = countReceived.incrementAndGet();
+
+            return sent == received;
+        });
     }
 
     private synchronized void establishConnection(String serverChannel, String responseChannel) {
@@ -82,7 +88,9 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
             UnicastClient<String> unicastClient = null;
 
             try {
-                System.out.println("Not initialized, establishing a connection for server channel " + serverChannel + ", and response channel " + responseChannel);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Not initialized, establishing a connection for server channel " + serverChannel + ", and response channel " + responseChannel);
+                }
 
                 final CyclicBarrier barrier = new CyclicBarrier(2);
 
@@ -92,23 +100,31 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
 
                     connectionId = establishConnectionAckDecoder.connectionId();
 
-                    System.out.println("Received connection id => " + connectionId);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Received connection id => " + connectionId);
+                    }
 
                     try {
                         barrier.await(15, TimeUnit.SECONDS);
                     } catch (Throwable t) {
-                        System.out.println("Timed awaiting client await");
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Timed awaiting client await");
+                        }
                     }
 
                     return Observable.empty();
                 };
 
-                System.out.println("Creating subscription to listen for connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Creating subscription to listen for connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+                }
                 Long2ObjectHashMap<SubscriptionDataHandler> map = new Long2ObjectHashMap<>();
                 map.put(EstablishConnectionAckDecoder.TEMPLATE_ID, establishConnectionAckDataHandler);
                 unicastServer = rxAeron.createUnicastServer(responseChannel, map);
 
-                System.out.println("Creating client to request connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Creating client to request connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+                }
                 unicastClient = rxAeron.createUnicastClient(serverChannel, new PublicationDataHandler<String>() {
                     @Override
                     public DirectBuffer call(MutableDirectBuffer requestBuffer, Integer offset, String s) {
@@ -141,22 +157,30 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
                     }
                 });
 
-                System.out.println("Requesting connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Requesting connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+                }
                 Observable<Void> offer = unicastClient.offer(Observable.just(responseChannel));
                 offer.subscribe();
 
-                System.out.println("Waiting for connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Waiting for connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
+                }
 
                 try {
                     barrier.await(15, TimeUnit.SECONDS);
                 } catch (TimeoutException e) {
-                    System.out.println("Timed out waiting response from server");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Timed out waiting response from server");
+                    }
                     LangUtil.rethrowUnchecked(e);
                 } catch (Exception e) {
                     LangUtil.rethrowUnchecked(e);
                 }
 
-                System.out.println("Creating subscription to handle responses for connection id " + connectionId);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Creating subscription to handle responses for connection id " + connectionId);
+                }
                 map = new Long2ObjectHashMap<>();
                 map.put(ServerResponseDecoder.TEMPLATE_ID, (buffer, offset, length) -> {
                         ServerResponseDecoder serverResponseDecoder = new ServerResponseDecoder();
@@ -166,17 +190,19 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
                         byte[] bytes = new byte[serverResponseDecoder.payloadLength()];
                         serverResponseDecoder.getPayload(bytes, 0, serverResponseDecoder.payloadLength());
 
-                        System.out.println("Handling response for transaction id " + transactionId);
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Handling response for transaction id " + transactionId);
+                        }
 
                         UnsafeBuffer payloadBuffer = new UnsafeBuffer(bytes);
 
-                        PublishSubject<DirectBuffer> responseSubject = transactionIdToResponse.get(transactionId);
+                        Subscriber<? super DirectBuffer> subscriber = transactionIdToResponse.get(transactionId);
 
-                        if (responseSubject == null) {
+                        if (subscriber == null) {
                             return Observable.error(new IllegalStateException("No transaction found for transaction id " + transactionId));
                         } else {
 
-                            responseSubject.onNext(payloadBuffer);
+                            subscriber.onNext(payloadBuffer);
 
                             return Observable.empty();
                         }
@@ -185,7 +211,9 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
 
                 responseServer = rxAeron.createUnicastServer(responseChannel, map);
 
-                System.out.println("Establishing connection for connection id " + connectionId + ", server channel " + serverChannel + ", and response channel " + responseChannel);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Establishing connection for connection id " + connectionId + ", server channel " + serverChannel + ", and response channel " + responseChannel);
+                }
                 client = rxAeron.createUnicastClient(serverChannel, new PublicationDataHandler<Request>() {
                     final long cid = connectionId;
 
@@ -196,7 +224,9 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
 
                         long transactionId = request.getTransactionId();
 
-                        System.out.println("Sending request for transaction id " + transactionId);
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Sending request for transaction id " + transactionId);
+                        }
 
                         clientRequestEncoder.transactionId(transactionId);
                         clientRequestEncoder.connectionId(cid);
@@ -226,7 +256,9 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
                     }
                 });
 
-                System.out.println("Connection for connection id " + connectionId + " successfully established");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Connection for connection id " + connectionId + " successfully established");
+                }
                 initialized = true;
 
             }

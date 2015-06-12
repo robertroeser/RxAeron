@@ -2,6 +2,7 @@ package io.reactivex.aeron.operators;
 
 import io.reactivex.aeron.NotConnectedException;
 import rx.Observable;
+import rx.Producer;
 import rx.Scheduler;
 import rx.Subscriber;
 import uk.co.real_logic.aeron.Publication;

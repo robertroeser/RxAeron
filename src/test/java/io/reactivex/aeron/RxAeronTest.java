@@ -13,6 +13,7 @@ import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 
 public class RxAeronTest extends TestCase {
     public static final String CHANNEL = "aeron:udp?remote=localhost:43450";
@@ -90,18 +91,20 @@ public class RxAeronTest extends TestCase {
 
     @Test
     public void testRequestReply() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(10);
+
         RequestReplyServer requestReplyServer = instance.createRequestReplyServer(SERVER_CHANNEL, new Func1<Observable<DirectBuffer>, Observable<DirectBuffer>>() {
             @Override
             public Observable<DirectBuffer> call(Observable<DirectBuffer> incoming) {
                 return incoming
                     .map(i -> {
+                        countDownLatch.countDown();
                         String s = new String(i.byteArray(), Charset.defaultCharset());
                         String pong = "Pong => " + s;
                         return new UnsafeBuffer(pong.getBytes());
                     });
             }
         });
-
 
         RequestReplyClient requestReplyClient = instance.createRequestReplyClient(SERVER_CHANNEL, RESPONSE_CHANNEL);
 
@@ -119,8 +122,48 @@ public class RxAeronTest extends TestCase {
                 System.out.println(s);
             });
 
-        //requestReplyClient.close();
-        //requestReplyServer.close();
+        assertEquals(0, countDownLatch.getCount());
+
+        requestReplyClient.close();
+        requestReplyServer.close();
+
+    }
+
+    @Test
+    public void testRequestReplyFor10KMessages() throws Exception {
+        CountDownLatch countDownLatch = new CountDownLatch(10_000);
+
+        RequestReplyServer requestReplyServer = instance.createRequestReplyServer(SERVER_CHANNEL, new Func1<Observable<DirectBuffer>, Observable<DirectBuffer>>() {
+            @Override
+            public Observable<DirectBuffer> call(Observable<DirectBuffer> incoming) {
+                return incoming
+                    .map(i -> {
+                        countDownLatch.countDown();
+                        String s = new String(i.byteArray(), Charset.defaultCharset());
+                        String pong = "Pong => " + s;
+                        return new UnsafeBuffer(pong.getBytes());
+                    });
+            }
+        });
+
+        RequestReplyClient requestReplyClient = instance.createRequestReplyClient(SERVER_CHANNEL, RESPONSE_CHANNEL);
+
+        Observable<DirectBuffer> buffer = Observable
+            .range(1, 10_000)
+            .map(i -> "ping => " + i)
+            .map(s -> new UnsafeBuffer(s.getBytes()));
+
+        requestReplyClient
+            .offer(buffer)
+            .toBlocking()
+            .forEach(db -> {
+                new String(db.byteArray(), Charset.defaultCharset());
+            });
+
+        assertEquals(0, countDownLatch.getCount());
+
+        requestReplyClient.close();
+        requestReplyServer.close();
 
     }
 

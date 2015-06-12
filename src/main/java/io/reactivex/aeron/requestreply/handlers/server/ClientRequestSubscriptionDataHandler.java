@@ -3,6 +3,8 @@ package io.reactivex.aeron.requestreply.handlers.server;
 import io.reactivex.aeron.SubscriptionDataHandler;
 import io.reactivex.aeron.protocol.ClientRequestDecoder;
 import io.reactivex.aeron.unicast.UnicastClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.functions.Func1;
 import uk.co.real_logic.agrona.DirectBuffer;
@@ -13,6 +15,8 @@ import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
  * Created by rroeser on 6/9/15.
  */
 public class ClientRequestSubscriptionDataHandler implements SubscriptionDataHandler {
+    private static final Logger logger = LoggerFactory.getLogger(ClientRequestSubscriptionDataHandler.class);
+
     private final Func1<Observable<DirectBuffer>, Observable<DirectBuffer>> handle;
     private final Long2ObjectHashMap<UnicastClient<Response>> serverResponseClients;
 
@@ -32,7 +36,9 @@ public class ClientRequestSubscriptionDataHandler implements SubscriptionDataHan
         long transactionId = clientRequestDecoder.transactionId();
         long connectionId = clientRequestDecoder.connectionId();
 
-        System.out.println("Server handling client request for transaction id " + transactionId + ", and connection id " + connectionId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Server handling client request for transaction id " + transactionId + ", and connection id " + connectionId);
+        }
 
         UnsafeBuffer payloadBuffer = new UnsafeBuffer(bytes);
         Observable<DirectBuffer> dataObservable = Observable.just(payloadBuffer);
