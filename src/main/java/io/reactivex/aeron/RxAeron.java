@@ -10,6 +10,7 @@ import io.reactivex.aeron.requestreply.RequestReplyClient;
 import io.reactivex.aeron.requestreply.RequestReplyServer;
 import io.reactivex.aeron.requestreply.handlers.server.ClientRequestSubscriptionDataHandler;
 import io.reactivex.aeron.requestreply.handlers.server.EstablishConnectionSubscriptionDataHandler;
+import io.reactivex.aeron.requestreply.handlers.server.Response;
 import io.reactivex.aeron.unicast.DefaultUnicastClient;
 import io.reactivex.aeron.unicast.DefaultUnicastServer;
 import io.reactivex.aeron.unicast.UnicastClient;
@@ -47,11 +48,11 @@ public class RxAeron implements Closeable {
 
         context = new Aeron.Context()
             .newConnectionHandler((String channel, int streamId, int sessionId, long joiningPosition, String sourceInformation) ->
-                System.out.println("New Connection => channel: " + channel
-                    + " stream: " + streamId
-                    + " session: " + sessionId
-                    + " position: " + joiningPosition
-                    + "  source: " + sourceInformation)
+                    System.out.println("New Connection => channel: " + channel
+                        + " stream: " + streamId
+                        + " session: " + sessionId
+                        + " position: " + joiningPosition
+                        + "  source: " + sourceInformation)
             )
             .errorHandler(Throwable::printStackTrace);
 
@@ -104,7 +105,7 @@ public class RxAeron implements Closeable {
 
     public RequestReplyServer createRequestReplyServer(String channel, Func1<Observable<DirectBuffer>, Observable<DirectBuffer>> handle) {
 
-        Long2ObjectHashMap<UnicastClient> serverResponseClients = new Long2ObjectHashMap<>();
+        Long2ObjectHashMap<UnicastClient<Response>> serverResponseClients = new Long2ObjectHashMap<>();
 
         EstablishConnectionSubscriptionDataHandler establishConnectionServerDataHandler
             = new EstablishConnectionSubscriptionDataHandler(serverResponseClients, this);

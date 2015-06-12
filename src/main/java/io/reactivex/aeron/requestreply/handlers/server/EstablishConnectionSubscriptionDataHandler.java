@@ -15,12 +15,12 @@ import java.io.IOException;
  * Created by rroeser on 6/9/15.
  */
 public class EstablishConnectionSubscriptionDataHandler implements SubscriptionDataHandler {
-    private final Long2ObjectHashMap<UnicastClient> serverResponseClients;
+    private final Long2ObjectHashMap<UnicastClient<Response>> serverResponseClients;
     private final RxAeron rxAeron;
     private final EstablishConnectionDecoder establishConnectionDecoder = new EstablishConnectionDecoder();
 
 
-    public EstablishConnectionSubscriptionDataHandler(Long2ObjectHashMap<UnicastClient> serverResponseClients, RxAeron rxAeron) {
+    public EstablishConnectionSubscriptionDataHandler(Long2ObjectHashMap<UnicastClient<Response>> serverResponseClients, RxAeron rxAeron) {
         this.serverResponseClients = serverResponseClients;
         this.rxAeron = rxAeron;
     }

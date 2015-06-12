@@ -19,7 +19,6 @@ import uk.co.real_logic.agrona.collections.Long2ObjectHashMap;
 import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -172,10 +171,15 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
                         UnsafeBuffer payloadBuffer = new UnsafeBuffer(bytes);
 
                         PublishSubject<DirectBuffer> responseSubject = transactionIdToResponse.get(transactionId);
-                        responseSubject.onNext(payloadBuffer);
-                        responseSubject.onCompleted();
 
-                        return Observable.empty();
+                        if (responseSubject == null) {
+                            return Observable.error(new IllegalStateException("No transaction found for transaction id " + transactionId));
+                        } else {
+
+                            responseSubject.onNext(payloadBuffer);
+
+                            return Observable.empty();
+                        }
                     }
                 );
 
