@@ -7,6 +7,8 @@ description = 'RxAeron – RxJava Bindings for Aeron'
 
 apply plugin: 'rxjava-project'
 apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 repositories {
     jcenter()
@@ -56,4 +58,10 @@ task generateTypes(type:JavaExec) {
             'sbe.target.language': 'Java',
             'sbe.validation.stop.on.error': 'true')
     args "${project.projectDir}/src/main/resources/schema.xml"
+}
+
+mainClassName = "io.reactivex.aeron.sample.EchoUnicastServer"
+
+shadowJar {
+    archiveName = 'rx-aeron-all.jar'
 }

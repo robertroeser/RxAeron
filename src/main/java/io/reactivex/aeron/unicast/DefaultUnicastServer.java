@@ -75,7 +75,7 @@ public class DefaultUnicastServer implements UnicastServer {
 
     class DefaultCallback implements RateReporter.Callback
     {
-        public void report(final StringBuilder reportString)
+        public synchronized void report(final StringBuilder reportString)
         {
             try {
                 System.out.println(reportString);

@@ -2,6 +2,7 @@ package io.reactivex.aeron.sample;
 
 import io.reactivex.aeron.RxAeron;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -11,15 +12,17 @@ public class EchoUnicastServer {
     private static final String ECHO_UNICAST_CHANNEL = "aeron:udp?remote=localhost:43123";
 
     public static void main(String... args) {
-        final long[] count = {0};
+        String channel = System.getProperty("channel", ECHO_UNICAST_CHANNEL);
+        System.out.println("Listening on channel " + channel);
+        final AtomicLong count = new AtomicLong();
 
         RxAeron rxAeron = RxAeron.getInstance();
-        rxAeron.createUnicastServer(ECHO_UNICAST_CHANNEL, bufferObservable ->
+        rxAeron.createUnicastServer(channel, bufferObservable ->
             bufferObservable
                 .map(buffer -> {
-                        count[0]++;
+                        long c = count.incrementAndGet();
 
-                        if (count[0] % 10_000 == 0) {
+                        if (c % 10_000 == 0) {
                             System.out.println(new String(buffer.byteArray()));
                         }
 

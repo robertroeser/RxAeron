@@ -52,6 +52,7 @@ public class DefaultUnicastClient<T> implements UnicastClient<T> {
 
                 return unicastClientDataHandler.call(requestBuffer, messageHeaderEncoder.size(), b);
             })
+            .onBackpressureBlock()
             .lift(operatorPublish).map(f -> null);
     }
 
