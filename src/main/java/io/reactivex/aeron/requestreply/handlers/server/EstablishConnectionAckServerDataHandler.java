@@ -9,9 +9,11 @@ import uk.co.real_logic.agrona.MutableDirectBuffer;
  * Created by rroeser on 6/9/15.
  */
 public class EstablishConnectionAckServerDataHandler implements PublicationDataHandler<Long> {
+    private final EstablishConnectionAckEncoder establishConnectionAckEncoder = new EstablishConnectionAckEncoder();
+
     @Override
     public DirectBuffer call(MutableDirectBuffer requestBuffer, Integer offset, Long connectionId) {
-        EstablishConnectionAckEncoder establishConnectionAckEncoder = new EstablishConnectionAckEncoder();
+
         establishConnectionAckEncoder.wrap(requestBuffer, offset);
         establishConnectionAckEncoder.connectionId(connectionId);
 

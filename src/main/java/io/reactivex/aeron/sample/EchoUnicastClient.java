@@ -17,8 +17,7 @@ public class EchoUnicastClient {
     public static void main(String... args) {
         String channel = System.getProperty("channel", ECHO_UNICAST_CHANNEL);
         System.out.println("Listening on channel " + channel);
-        RxAeron rxAeron = RxAeron.getInstance();
-        UnicastClient unicastClient = rxAeron.createUnicastClient(channel);
+        UnicastClient unicastClient = RxAeron.createUnicastClient(channel);
 
         Observable<DirectBuffer> buffer = Observable
             .interval(1, TimeUnit.NANOSECONDS)

@@ -1,13 +1,14 @@
 package io.reactivex.aeron.requestreply;
 
 import io.reactivex.aeron.PublicationDataHandler;
-import io.reactivex.aeron.RxAeron;
+import io.reactivex.aeron.RxAeronFactory;
 import io.reactivex.aeron.SubscriptionDataHandler;
 import io.reactivex.aeron.TransactionIdUtil;
 import io.reactivex.aeron.protocol.ClientRequestEncoder;
 import io.reactivex.aeron.protocol.EstablishConnectionAckDecoder;
 import io.reactivex.aeron.protocol.EstablishConnectionEncoder;
 import io.reactivex.aeron.protocol.ServerResponseDecoder;
+import io.reactivex.aeron.requestreply.handlers.client.Request;
 import io.reactivex.aeron.unicast.UnicastClient;
 import io.reactivex.aeron.unicast.UnicastServer;
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DefaultRequestReplyClient implements RequestReplyClient {
     private static final Logger logger = LoggerFactory.getLogger(DefaultRequestReplyClient.class);
 
-    private final RxAeron rxAeron;
+    private final RxAeronFactory rxAeron;
 
     private final Long2ObjectHashMap<Subscriber<? super DirectBuffer>> transactionIdToResponse;
 
@@ -48,7 +49,7 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
 
     private volatile boolean initialized = false;
 
-    public DefaultRequestReplyClient(RxAeron rxAeron, String serverChannel, String responseChannel) {
+    public DefaultRequestReplyClient(RxAeronFactory rxAeron, String serverChannel, String responseChannel) {
         this.rxAeron = rxAeron;
         this.serverChannel = serverChannel;
         this.responseChannel = responseChannel;
@@ -160,7 +161,7 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Requesting connection id for server channel " + serverChannel + ", and response channel " + responseChannel);
                 }
-                Observable<Void> offer = unicastClient.offer(Observable.just(responseChannel));
+                Observable<?> offer = unicastClient.offer(Observable.just(responseChannel));
                 offer.subscribe();
 
                 if (logger.isDebugEnabled()) {
@@ -265,36 +266,18 @@ public class DefaultRequestReplyClient implements RequestReplyClient {
             finally {
                 try {
                     unicastClient.close();
-                } catch (Exception e1) {
+                } catch (Throwable e1) {
 
                 }
 
                 try {
                     unicastServer.close();
-                } catch (Exception e1) {
+                } catch (Throwable e1) {
 
                 }
             }
         }
 
-    }
-
-    static class Request {
-        private long transactionId;
-        private DirectBuffer payload;
-
-        public Request(long transactionId, DirectBuffer payload) {
-            this.transactionId = transactionId;
-            this.payload = payload;
-        }
-
-        public long getTransactionId() {
-            return transactionId;
-        }
-
-        public DirectBuffer getPayload() {
-            return payload;
-        }
     }
 
     @Override

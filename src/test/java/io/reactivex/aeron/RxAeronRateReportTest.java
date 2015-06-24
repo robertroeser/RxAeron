@@ -20,10 +20,9 @@ public class RxAeronRateReportTest {
 
     @Test
     public void testRateWithRXAeron() throws Exception {
-        RxAeron instance = RxAeron.getInstance();
 
-        UnicastClient rateTestClient = instance.createUnicastClient(CHANNEL);
-        UnicastServer rateTestServer = instance.createUnicastServer(CHANNEL, ob -> ob.map(b -> null));
+        UnicastClient rateTestClient = RxAeron.createUnicastClient(CHANNEL);
+        UnicastServer rateTestServer = RxAeron.createUnicastServer(CHANNEL, ob -> ob.map(b -> null));
         rateTestServer.enableRateReport();
 
         Observable<DirectBuffer> buffer = Observable
@@ -41,11 +40,12 @@ public class RxAeronRateReportTest {
 
     @Test
     public void testSendWithoutOperator() throws Exception {
-        RxAeron rxAeron = RxAeron.getInstance();
-        UnicastServer unicastServer = rxAeron.createUnicastServer(CHANNEL, ob -> ob.map(b -> null));
+        UnicastServer unicastServer = RxAeron.createUnicastServer(CHANNEL, ob -> ob.map(b -> null));
         unicastServer.enableRateReport();
 
-        Publication publication = rxAeron.aeron.addPublication(CHANNEL, 1);
+        RxAeronFactoryImpl rxAeronFactory = (RxAeronFactoryImpl) RxAeronFactoryImpl.getInstance();
+
+        Publication publication = rxAeronFactory.aeron.addPublication(CHANNEL, 1);
 
         for (int i = 1; i < 1_000_000; i++) {
 

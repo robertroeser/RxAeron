@@ -4,13 +4,11 @@ import io.reactivex.aeron.SubscriptionDataHandler;
 import io.reactivex.aeron.protocol.MessageHeaderDecoder;
 import rx.Observable;
 import rx.Scheduler;
-import rx.functions.Func3;
 import rx.schedulers.Schedulers;
 import uk.co.real_logic.aeron.Aeron;
 import uk.co.real_logic.aeron.FragmentAssemblyAdapter;
 import uk.co.real_logic.aeron.Subscription;
 import uk.co.real_logic.aeron.tools.RateReporter;
-import uk.co.real_logic.agrona.DirectBuffer;
 import uk.co.real_logic.agrona.collections.Long2ObjectHashMap;
 import uk.co.real_logic.agrona.concurrent.BackoffIdleStrategy;
 import uk.co.real_logic.agrona.concurrent.IdleStrategy;
@@ -102,11 +100,11 @@ public class DefaultUnicastServer implements UnicastServer {
 
             int templateId = messageHeaderDecoder.templateId();
 
-            Func3<DirectBuffer, Integer, Integer, Observable<Void>> handler = handlers.get(templateId);
+            SubscriptionDataHandler handler = handlers.get(templateId);
 
             if (handler != null) {
                 stats.incrementVerifiableMessages();
-                Observable<Void> call =
+                Observable<?> call =
                     handler.call(buffer, offset + messageHeaderDecoder.size(), messageHeaderDecoder.blockLength());
                 call.doOnError(Throwable::printStackTrace).subscribe();
             } else {

@@ -13,14 +13,14 @@ import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
     public class UnicastSubscriptionDataHandler implements SubscriptionDataHandler {
 
     private final UnicastRequestDecoder unicastRequestDecoder = new UnicastRequestDecoder();
-    private final Func1<Observable<DirectBuffer>, Observable<Void>> handle;
+    private final Func1<Observable<DirectBuffer>, Observable<?>> handle;
 
-    public UnicastSubscriptionDataHandler(Func1<Observable<DirectBuffer>, Observable<Void>> handle) {
+    public UnicastSubscriptionDataHandler(Func1<Observable<DirectBuffer>, Observable<?>> handle) {
         this.handle = handle;
     }
 
     @Override
-    public Observable<Void> call(DirectBuffer buffer, Integer offset, Integer length) {
+    public Observable<?> call(DirectBuffer buffer, Integer offset, Integer length) {
         unicastRequestDecoder.wrap(buffer, offset, length, 0);
 
         byte[] bytes = new byte[unicastRequestDecoder.payloadLength()];
@@ -28,7 +28,7 @@ import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
 
         UnsafeBuffer payloadBuffer = new UnsafeBuffer(bytes);
         Observable<DirectBuffer> dataObservable = Observable.just(payloadBuffer);
-        Observable<Void> handleObservable = handle.call(dataObservable);
+        Observable<?> handleObservable = handle.call(dataObservable);
 
         return handleObservable;
     }

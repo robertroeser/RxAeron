@@ -21,8 +21,8 @@ targetCompatibility = JavaVersion.VERSION_1_8
 dependencies {
     compile 'io.reactivex:rxjava:1.0.10'
 
-    // SLF4J
-
+    // Guava
+    compile 'com.google.guava:guava:18.0'
 
     // Real Logic stuff needs to be built and published locally right now
     compile 'uk.co.real-logic:sbe:1.1-RC2-SNAPSHOT'
@@ -32,6 +32,8 @@ dependencies {
     compile 'uk.co.real-logic:aeron-driver:0.1-SNAPSHOT'
     compile 'uk.co.real-logic:aeron-tools:0.1-SNAPSHOT'
 
+
+    // SLF4J
     compile 'org.slf4j:slf4j-api:1.7.12'
 
     testCompile 'junit:junit-dep:4.10'

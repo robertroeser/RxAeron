@@ -28,7 +28,7 @@ public class ClientRequestSubscriptionDataHandler implements SubscriptionDataHan
     }
 
     @Override
-    public Observable<Void> call(DirectBuffer buffer, Integer offset, Integer length) {
+    public Observable<?> call(DirectBuffer buffer, Integer offset, Integer length) {
         clientRequestDecoder.wrap(buffer, offset, length, 0);
 
         byte[] bytes = new byte[clientRequestDecoder.payloadLength()];

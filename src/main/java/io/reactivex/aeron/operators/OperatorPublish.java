@@ -2,14 +2,12 @@ package io.reactivex.aeron.operators;
 
 import io.reactivex.aeron.NotConnectedException;
 import rx.Observable;
-import rx.Producer;
 import rx.Scheduler;
 import rx.Subscriber;
 import uk.co.real_logic.aeron.Publication;
 import uk.co.real_logic.agrona.DirectBuffer;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by rroeser on 6/5/15.
@@ -61,7 +59,6 @@ public class OperatorPublish implements Observable.Operator<Long, DirectBuffer> 
                 } else if (offer == Publication.NOT_CONNECTED) {
                     child.onError(new NotConnectedException());
                 } else if (offer == Publication.BACK_PRESSURE) {
-                    request(0);
                     worker.schedule(() ->
                             tryOffer(buffer)
                     , 1, TimeUnit.MILLISECONDS);

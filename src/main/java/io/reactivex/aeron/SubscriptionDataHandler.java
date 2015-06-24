@@ -7,7 +7,7 @@ import uk.co.real_logic.agrona.DirectBuffer;
 /**
  * Created by rroeser on 6/10/15.
  */
-public interface SubscriptionDataHandler extends Func3<DirectBuffer, Integer, Integer, Observable<Void>> {
+public interface SubscriptionDataHandler extends Func3<DirectBuffer, Integer, Integer, Observable<?>> {
     @Override
-    Observable<Void> call(DirectBuffer buffer, Integer offset, Integer length);
+    Observable<?> call(DirectBuffer buffer, Integer offset, Integer length);
 }

@@ -22,7 +22,6 @@ public class RxAeronTest extends TestCase {
 
     public static final String RESPONSE_CHANNEL = "aeron:udp?remote=localhost:60000";
 
-    private RxAeron instance = RxAeron.getInstance();
 
     @Test(timeout = 2000)
     public void testUnicastServerAndClientForTen() throws Exception {
@@ -30,8 +29,8 @@ public class RxAeronTest extends TestCase {
 
         CountDownLatch countDownLatch = new CountDownLatch(10);
 
-        UnicastClient unicastClient = instance.createUnicastClient(CHANNEL);
-        UnicastServer unicastServer = instance.createUnicastServer(CHANNEL, (buffer) ->
+        UnicastClient unicastClient = RxAeron.createUnicastClient(CHANNEL);
+        UnicastServer unicastServer = RxAeron.createUnicastServer(CHANNEL, (buffer) ->
                 buffer.map(b -> {
                     String s = new String(b.byteArray());
                     System.out.println(Thread.currentThread() + " -- handling => " + s);
@@ -63,8 +62,8 @@ public class RxAeronTest extends TestCase {
 
         CountDownLatch countDownLatch = new CountDownLatch(10_000);
 
-        UnicastClient unicastClient = instance.createUnicastClient(CHANNEL);
-        UnicastServer unicastServer = instance.createUnicastServer(CHANNEL, (buffer) ->
+        UnicastClient unicastClient = RxAeron.createUnicastClient(CHANNEL);
+        UnicastServer unicastServer = RxAeron.createUnicastServer(CHANNEL, (buffer) ->
                 buffer.map(b -> {
 
                     countDownLatch.countDown();
@@ -93,7 +92,7 @@ public class RxAeronTest extends TestCase {
     public void testRequestReply() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(10);
 
-        RequestReplyServer requestReplyServer = instance.createRequestReplyServer(SERVER_CHANNEL, new Func1<Observable<DirectBuffer>, Observable<DirectBuffer>>() {
+        RequestReplyServer requestReplyServer = RxAeron.createRequestReplyServer(SERVER_CHANNEL, new Func1<Observable<DirectBuffer>, Observable<DirectBuffer>>() {
             @Override
             public Observable<DirectBuffer> call(Observable<DirectBuffer> incoming) {
                 return incoming
@@ -106,7 +105,7 @@ public class RxAeronTest extends TestCase {
             }
         });
 
-        RequestReplyClient requestReplyClient = instance.createRequestReplyClient(SERVER_CHANNEL, RESPONSE_CHANNEL);
+        RequestReplyClient requestReplyClient = RxAeron.createRequestReplyClient(SERVER_CHANNEL, RESPONSE_CHANNEL);
 
         Observable<DirectBuffer> buffer = Observable
             .range(1, 10)
@@ -133,7 +132,7 @@ public class RxAeronTest extends TestCase {
     public void testRequestReplyFor10KMessages() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(10_000);
 
-        RequestReplyServer requestReplyServer = instance.createRequestReplyServer(SERVER_CHANNEL, new Func1<Observable<DirectBuffer>, Observable<DirectBuffer>>() {
+        RequestReplyServer requestReplyServer = RxAeron.createRequestReplyServer(SERVER_CHANNEL, new Func1<Observable<DirectBuffer>, Observable<DirectBuffer>>() {
             @Override
             public Observable<DirectBuffer> call(Observable<DirectBuffer> incoming) {
                 return incoming
@@ -146,7 +145,7 @@ public class RxAeronTest extends TestCase {
             }
         });
 
-        RequestReplyClient requestReplyClient = instance.createRequestReplyClient(SERVER_CHANNEL, RESPONSE_CHANNEL);
+        RequestReplyClient requestReplyClient = RxAeron.createRequestReplyClient(SERVER_CHANNEL, RESPONSE_CHANNEL);
 
         Observable<DirectBuffer> buffer = Observable
             .range(1, 10_000)

@@ -16,8 +16,7 @@ public class PongServer {
     public static void main(String... args) {
         AtomicLong count = new AtomicLong(0);
 
-        RxAeron rxAeron = RxAeron.getInstance();
-        rxAeron.createRequestReplyServer(PING_SERVER_CHANNEL, bufferObservable ->
+        RxAeron.createRequestReplyServer(PING_SERVER_CHANNEL, bufferObservable ->
                 bufferObservable
                     .flatMap(buffer -> {
                         final long c = count.incrementAndGet();

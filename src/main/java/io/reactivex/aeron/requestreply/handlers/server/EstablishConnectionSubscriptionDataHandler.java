@@ -1,6 +1,6 @@
 package io.reactivex.aeron.requestreply.handlers.server;
 
-import io.reactivex.aeron.RxAeron;
+import io.reactivex.aeron.RxAeronFactory;
 import io.reactivex.aeron.SubscriptionDataHandler;
 import io.reactivex.aeron.TransactionIdUtil;
 import io.reactivex.aeron.protocol.EstablishConnectionDecoder;
@@ -20,17 +20,17 @@ public class EstablishConnectionSubscriptionDataHandler implements SubscriptionD
     private static final Logger logger = LoggerFactory.getLogger(EstablishConnectionSubscriptionDataHandler.class);
 
     private final Long2ObjectHashMap<UnicastClient<Response>> serverResponseClients;
-    private final RxAeron rxAeron;
+    private final RxAeronFactory rxAeron;
     private final EstablishConnectionDecoder establishConnectionDecoder = new EstablishConnectionDecoder();
 
 
-    public EstablishConnectionSubscriptionDataHandler(Long2ObjectHashMap<UnicastClient<Response>> serverResponseClients, RxAeron rxAeron) {
+    public EstablishConnectionSubscriptionDataHandler(Long2ObjectHashMap<UnicastClient<Response>> serverResponseClients, RxAeronFactory rxAeron) {
         this.serverResponseClients = serverResponseClients;
         this.rxAeron = rxAeron;
     }
 
     @Override
-    public Observable<Void> call(DirectBuffer buffer, Integer offset, Integer length) {
+    public Observable<?> call(DirectBuffer buffer, Integer offset, Integer length) {
         establishConnectionDecoder.wrap(buffer, offset, length, 0);
 
         String responseChannel = establishConnectionDecoder.responseChannel();
@@ -65,8 +65,7 @@ public class EstablishConnectionSubscriptionDataHandler implements SubscriptionD
                 .doOnNext(f ->
                         serverResponseClients.computeIfAbsent(key, k ->
                             rxAeron.createUnicastClient(responseChannel, new ServerResponseServerDataHandler()))
-                )
-                .map(f -> null);
+                );
         }
 
         return Observable.empty();

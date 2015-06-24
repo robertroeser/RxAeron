@@ -16,8 +16,7 @@ public class EchoUnicastServer {
         System.out.println("Listening on channel " + channel);
         final AtomicLong count = new AtomicLong();
 
-        RxAeron rxAeron = RxAeron.getInstance();
-        rxAeron.createUnicastServer(channel, bufferObservable ->
+        RxAeron.createUnicastServer(channel, bufferObservable ->
             bufferObservable
                 .map(buffer -> {
                         long c = count.incrementAndGet();

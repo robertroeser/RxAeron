@@ -17,8 +17,7 @@ public class PingClient {
     private static final String PONG_RESPONSE_CHANNEL = "aeron:udp?remote=localhost:" + 50_001;
 
     public static void main(String... args) {
-        RxAeron rxAeron = RxAeron.getInstance();
-        RequestReplyClient requestReplyClient = rxAeron.createRequestReplyClient(PING_SERVER_CHANNEL, PONG_RESPONSE_CHANNEL);
+        RequestReplyClient requestReplyClient = RxAeron.createRequestReplyClient(PING_SERVER_CHANNEL, PONG_RESPONSE_CHANNEL);
 
         Observable<DirectBuffer> buffer = Observable
             .interval(1, TimeUnit.NANOSECONDS)

@@ -9,9 +9,11 @@ import uk.co.real_logic.agrona.MutableDirectBuffer;
  * Created by rroeser on 6/9/15.
  */
 public class UnicastPublicationDataHandler implements PublicationDataHandler<DirectBuffer> {
+    private final UnicastRequestEncoder unicastRequestEncoder = new UnicastRequestEncoder();
+
     @Override
     public DirectBuffer call(MutableDirectBuffer requestBuffer, Integer offset, DirectBuffer payload) {
-        UnicastRequestEncoder unicastRequestEncoder = new UnicastRequestEncoder();
+
         unicastRequestEncoder.wrap(requestBuffer, offset);
 
         unicastRequestEncoder.putPayload(payload, 0, payload.capacity());

@@ -9,10 +9,10 @@ import uk.co.real_logic.agrona.MutableDirectBuffer;
  * Created by rroeser on 6/9/15.
  */
 public class ServerResponseServerDataHandler implements PublicationDataHandler<Response> {
+    private ServerResponseEncoder serverResponseEncoder = new ServerResponseEncoder();
 
     @Override
     public DirectBuffer call(MutableDirectBuffer requestBuffer, Integer offset, Response response) {
-        ServerResponseEncoder serverResponseEncoder = new ServerResponseEncoder();
         serverResponseEncoder.wrap(requestBuffer, offset);
 
         serverResponseEncoder.transctionId(response.getTransactionId());
